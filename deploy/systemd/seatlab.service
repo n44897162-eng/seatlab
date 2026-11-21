@@ -1,0 +1,37 @@
+[Unit]
+Description=SeatLab seat-allocation API
+Documentation=https://github.com/n44897162-eng/seatlab
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=seatlab
+Group=seatlab
+WorkingDirectory=/opt/seatlab
+EnvironmentFile=-/etc/seatlab.env
+Environment=PYTHONUNBUFFERED=1
+Environment=SEATLAB_DB=/var/lib/seatlab/seatlab.db
+StateDirectory=seatlab
+ExecStart=/opt/seatlab/.venv/bin/seatlab serve --host 127.0.0.1 --port 8000 --workers 1
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+
+# Hardening: the service only needs to read its own venv and bind a local port.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockMemory=true
+ReadWritePaths=/var/lib/seatlab
+
+[Install]
+WantedBy=multi-user.target

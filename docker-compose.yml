@@ -1,0 +1,53 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: seatlab:1.4.0
+    container_name: seatlab
+    ports:
+      - "${SEATLAB_PORT:-8000}:8000"
+    environment:
+      SEATLAB_API_KEY: ${SEATLAB_API_KEY:-}
+      SEATLAB_ADMIN_KEY: ${SEATLAB_ADMIN_KEY:-change-me-admin}
+      SEATLAB_APP_KEY: ${SEATLAB_APP_KEY:-}
+      SEATLAB_DB: /data/seatlab.db
+      SEATLAB_CORS_ORIGINS: ${SEATLAB_CORS_ORIGINS:-*}
+      SEATLAB_AUTH_MODE: ${SEATLAB_AUTH_MODE:-header}
+      SEATLAB_PUBLIC_URL: ${SEATLAB_PUBLIC_URL:-}
+      SEATLAB_SESSION_SECRET: ${SEATLAB_SESSION_SECRET:-}
+      SEATLAB_TRUST_HEADER: ${SEATLAB_TRUST_HEADER:-}
+      SEATLAB_COOKIE_SECURE: ${SEATLAB_COOKIE_SECURE:-}
+      SEATLAB_ADMIN_IDS: ${SEATLAB_ADMIN_IDS:-}
+      SEATLAB_ADMIN_ROLES: ${SEATLAB_ADMIN_ROLES:-}
+      SEATLAB_CAS_BASE: ${SEATLAB_CAS_BASE:-}
+      SEATLAB_CAS_SERVICE: ${SEATLAB_CAS_SERVICE:-}
+      SEATLAB_CAS_VALIDATE: ${SEATLAB_CAS_VALIDATE:-}
+      SEATLAB_OAUTH_AUTHORIZE: ${SEATLAB_OAUTH_AUTHORIZE:-}
+      SEATLAB_OAUTH_TOKEN: ${SEATLAB_OAUTH_TOKEN:-}
+      SEATLAB_OAUTH_USERINFO: ${SEATLAB_OAUTH_USERINFO:-}
+      SEATLAB_OAUTH_CLIENT_ID: ${SEATLAB_OAUTH_CLIENT_ID:-}
+      SEATLAB_OAUTH_CLIENT_SECRET: ${SEATLAB_OAUTH_CLIENT_SECRET:-}
+      SEATLAB_OAUTH_ID_FIELD: ${SEATLAB_OAUTH_ID_FIELD:-}
+    volumes:
+      - seatlab-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=3).status==200 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+volumes:
+  seatlab-data:

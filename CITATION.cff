@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use SeatLab in a paper, report or policy memo, cite it as below."
+title: "SeatLab: a discrete-event seat-allocation simulator and policy API for academic libraries"
+abstract: "SeatLab models library seats as servers and students as an arrival stream with planned breaks and hoarding behaviour, then compares nine allocation mechanisms (FCFS, timed release, smart release, staff patrol, reservation, mixed, credit, congestion pricing) on the same random stream. It ships a zero-dependency engine, a FastAPI service, a Prometheus endpoint and an interactive policy designer."
+authors:
+  - name: "SeatLab contributors"
+version: "1.4.0"
+date-released: "2026-11-21"
+license: MIT
+repository-code: "https://github.com/n44897162-eng/seatlab"
+keywords:
+  - discrete-event simulation
+  - queueing theory
+  - library operations
+  - seat allocation
+  - policy design

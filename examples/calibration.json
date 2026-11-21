@@ -1,0 +1,67 @@
+{
+  "params": {
+    "cap": 500,
+    "visits_per_seat": 1.5000346666666666,
+    "mean_present_h": 4.91,
+    "sigma_present": 0.55,
+    "mean_away_min": 45.0,
+    "sigma_away": 0.5,
+    "n_away": 1.5,
+    "n_short": 1.2,
+    "n_class": 0.4,
+    "hoard_mu": 1.547,
+    "hoard_kappa": 1.4,
+    "patience_min": 22.0,
+    "rejoin_prob": 0.9,
+    "value_median": 2.6,
+    "value_sigma": 0.55,
+    "wait_disu": 0.55,
+    "monitor_cost_per_seat_day": 0.35,
+    "alt_value_frac": 0.45,
+    "open_minutes": 840,
+    "days": 6,
+    "seed": 777,
+    "daily_demand_jitter": 0.06
+  },
+  "achieved": {
+    "arrivals": 923.7,
+    "empty_share": 0.0794,
+    "avg_study_h": 4.343,
+    "served_rate": 1.0,
+    "welfare_day": 11579.8
+  },
+  "targets": {
+    "arrivals_per_day": 923.6666666666666,
+    "empty_share": 0.07911080852097276,
+    "mean_study_h": 4.397497894863467
+  },
+  "residuals": {
+    "arrivals_per_day_pct": 0.0,
+    "empty_share_abs": 0.0003,
+    "mean_study_h_abs": 0.055
+  },
+  "saturated": [],
+  "trace": [
+    {
+      "step": "visits_per_seat",
+      "value": 1.5
+    },
+    {
+      "step": "mean_present_h",
+      "value": 4.91
+    },
+    {
+      "step": "hoard_mean",
+      "value": 0.525
+    }
+  ],
+  "runs": 16,
+  "days": 6,
+  "demand_scale": 1.2,
+  "hoard_kappa": 1.4,
+  "observed": {
+    "arrivals": 923.6667,
+    "empty_share": 0.0791,
+    "avg_study_h": 4.3975
+  }
+}

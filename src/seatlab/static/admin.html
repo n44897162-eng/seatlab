@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SeatLab · 控制台</title>
+<style>
+  :root{
+    --paper:#F7F2E8; --ink:#23211C; --muted:#6F6657; --rule:#DCD3C4;
+    --accent:#B4452C; --green:#1E5A54; --amber:#C08A2E; --slate:#63758C;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Noto Serif SC","Songti SC",Georgia,serif;line-height:1.6}
+  .wrap{max-width:1220px;margin:0 auto;padding:48px 24px 64px}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+    border-bottom:1px solid var(--rule);padding-bottom:16px}
+  .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--accent)}
+  h1{font-size:32px;margin:6px 0 0;font-weight:700}
+  nav{font-family:var(--mono);font-size:12px;display:flex;gap:14px}
+  nav a{color:var(--green);text-decoration:none;border-bottom:1px solid rgba(30,90,84,.3)}
+  nav a:hover{color:var(--accent);border-color:var(--accent)}
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:28px;margin-top:26px}
+  .panel{background:#FBF7EF;border:1px solid var(--rule);padding:18px}
+  .panel + .panel{margin-top:18px}
+  .panel h3{font-size:14px;margin:0 0 10px;font-family:var(--mono);letter-spacing:.05em}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--rule);
+    background:#FBF7EF}
+  .kpi{padding:14px 14px 12px;border-right:1px solid var(--rule)}
+  .kpi:last-child{border-right:0}
+  .kpi b{display:block;font-size:24px;line-height:1.15}
+  .kpi span{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+  .ok{color:var(--green)} .warn{color:var(--accent)} .mid{color:var(--amber)}
+  label{display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:7px 8px;background:#fff;border:1px solid var(--rule);
+    font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+  textarea{resize:vertical;min-height:56px}
+  .row{display:flex;gap:8px}
+  button{font-family:var(--mono);font-size:12px;background:var(--ink);color:var(--paper);border:0;
+    padding:9px 14px;cursor:pointer;letter-spacing:.04em}
+  button:hover{background:var(--accent)}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--rule)}
+  button.ghost:hover{border-color:var(--accent);color:var(--accent)}
+  button[disabled]{opacity:.45;cursor:progress}
+  .legend{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--muted);
+    margin:10px 0 12px;flex-wrap:wrap}
+  .dot{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:middle}
+  #seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(13px,1fr));gap:4px}
+  .seat{aspect-ratio:1;border:1px solid rgba(0,0,0,.06);background:#E9E1D2;cursor:default}
+  .seat.reserved{background:var(--amber)}
+  .seat.occupied{background:var(--green)}
+  .seat.away{background:var(--slate)}
+  .seat:hover{outline:1px solid var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:400}
+  .tag{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border:1px solid var(--rule)}
+  .tag.ok{color:var(--green);border-color:rgba(30,90,84,.35)}
+  .tag.muted{color:var(--muted)}
+  .tag.warn,.tag.red{color:var(--accent);border-color:rgba(180,69,44,.35)}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    margin-bottom:10px}
+  .panel-head h3{margin:0}
+  .danger{background:var(--accent)}
+  .danger:hover{background:#8F2F1E}
+  .zone-row{display:grid;grid-template-columns:52px 1fr 64px 28px;gap:6px;margin-bottom:6px}
+  .zone-row input{padding:5px 6px;font-size:11.5px}
+  .zone-row button{padding:5px 7px;background:transparent;color:var(--muted);border:1px solid var(--rule)}
+  .zone-row button:hover{color:var(--accent);border-color:var(--accent);background:transparent}
+  .me{color:var(--muted);border-bottom:0!important}
+  .scroll{max-height:260px;overflow:auto}
+  #toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:var(--paper);
+    font-family:var(--mono);font-size:12px;padding:10px 14px;opacity:0;transition:opacity .2s;
+    pointer-events:none;max-width:360px}
+  #toast.show{opacity:1}
+  .gate{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;
+    justify-content:center;z-index:10}
+  .gate .panel{width:360px;padding:26px}
+  .gate h2{font-size:18px;margin:0 0 6px}
+  .gate p{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+  .gate a.sso{display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;
+    padding:11px 14px;border-radius:8px;font-size:14px;margin:4px 0 0}
+  .gate .or{font-size:12px;color:var(--muted);margin:16px 0 6px;display:flex;align-items:center;gap:8px}
+  .gate .or:before,.gate .or:after{content:"";height:1px;background:var(--rule);flex:1}
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;
+    justify-content:space-between;gap:12px;flex-wrap:wrap}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}
+    .kpi{border-bottom:1px solid var(--rule)}}
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <div class="panel">
+    <div class="kicker">SEATLAB · CONTROL PLANE · 1.4.0</div>
+    <h2>控制台登录</h2>
+    <div id="sso-box" style="display:none">
+      <p>馆员统一认证：用校园账号登录，权限由身份提供方的角色或管理员名单决定。</p>
+      <a class="sso" href="/auth/login?next=/admin">馆员统一认证登录</a>
+      <p id="sso-hint" style="margin-top:12px"></p>
+      <div class="or">或使用应急密钥</div>
+    </div>
+    <p>输入部署时设置的 <code>SEATLAB_ADMIN_KEY</code>。密钥只保存在本机 localStorage，不会写入服务端日志。</p>
+    <label>Admin Key</label>
+    <input id="key" type="password" placeholder="change-me" autocomplete="off">
+    <div class="row" style="margin-top:12px"><button id="connect">连接</button></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="kicker">SEATLAB · CONTROL PLANE · 1.4.0</div>
+      <h1 id="venue-name">控制台</h1>
+    </div>
+    <nav><a href="/">概览</a><a href="/design">机制设计器</a><a href="/app">学生端</a><a href="/docs">API</a><span id="me-tag" class="tag muted" style="display:none"></span><a href="#" id="logout" style="display:none">退出</a></nav>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h3>场馆参数</h3>
+        <label>名称</label><input id="f-name">
+        <div class="row">
+          <div style="flex:1"><label>座位数</label><input id="f-cap" type="number" min="10" max="5000"></div>
+          <div style="flex:1"><label>开放(分钟)</label><input id="f-open" type="number" min="0" max="1439"></div>
+        </div>
+        <label>闭馆(分钟)</label><input id="f-close" type="number" min="1" max="1440">
+        <label>机制</label><select id="f-policy"></select>
+        <div class="row">
+          <div style="flex:1"><label>释放(min)</label><input id="f-release" type="number" min="0" max="120"></div>
+          <div style="flex:1"><label>触发水位</label><input id="f-trigger" type="number" step="0.01" min="0" max="1"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>签到宽限</label><input id="f-grace" type="number" min="1" max="120"></div>
+          <div style="flex:1"><label>暂离上限</label><input id="f-away" type="number" min="5" max="240"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>信用阈值</label><input id="f-credit" type="number" min="1" max="20"></div>
+          <div style="flex:1"><label>封禁天数</label><input id="f-block" type="number" min="0" max="60"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label>最长预约(min)</label><input id="f-maxmin" type="number" min="30" max="720"></div>
+          <div style="flex:1"><label>同时在约上限</label><input id="f-maxactive" type="number" min="1" max="5"></div>
+        </div>
+        <label>信用统计窗口（天）</label><input id="f-window" type="number" min="1" max="365">
+        <div class="row" style="margin-top:14px">
+          <button id="save-venue">保存</button>
+          <button class="ghost" id="reload-venue">重置</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>区域配置</h3><button class="ghost" id="add-zone">新增区域</button></div>
+        <div id="zones-editor"></div>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">份额按比例分配总座位；有进行中预约时不能改座位数或区域。</p>
+      </div>
+
+      <div class="panel">
+        <h3>容量规划</h3>
+        <label>需求倍数（逗号分隔）</label><input id="f-demands" value="1.0, 1.2, 1.4">
+        <div class="row" style="margin-top:12px">
+          <button id="run-plan">跑网格</button>
+        </div>
+        <div id="plan-out" style="margin-top:10px"></div>
+      </div>
+
+      <div class="panel">
+        <h3>发布通知</h3>
+        <label>标题</label><input id="f-title">
+        <label>正文</label><textarea id="f-body" rows="3"></textarea>
+        <div class="row" style="margin-top:10px"><button id="announce">发布</button></div>
+      </div>
+
+    </div>
+
+    <div>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="panel" style="margin-top:18px">
+        <h3>实时座位图 <span class="tag" id="live-tag">live</span></h3>
+        <div class="legend">
+          <span><i class="dot" style="background:#E9E1D2"></i>空闲</span>
+          <span><i class="dot" style="background:var(--amber)"></i>已预约</span>
+          <span><i class="dot" style="background:var(--green)"></i>在座</span>
+          <span><i class="dot" style="background:var(--slate)"></i>暂离</span>
+          <span id="seat-count"></span>
+        </div>
+        <div id="seats"></div>
+      </div>
+
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-head">
+          <h3>进行中预约 <span class="tag" id="r-count">0</span></h3>
+          <button class="ghost danger" id="close-venue">立即清场</button>
+        </div>
+        <div class="scroll"><table><thead><tr><th>#</th><th>座位</th><th>学生</th><th>状态</th><th>截止</th><th></th></tr></thead>
+        <tbody id="reservations"></tbody></table></div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:18px;gap:18px">
+        <div class="panel" style="margin-top:0">
+          <h3>待处理举报 <span class="tag" id="c-count">0</span></h3>
+          <div class="scroll"><table><thead><tr><th>#</th><th>座位</th><th>内容</th><th></th></tr></thead>
+          <tbody id="complaints"></tbody></table></div>
+        </div>
+        <div class="panel" style="margin-top:0">
+          <h3>信用记录 <span class="tag" id="v-count">0</span></h3>
+          <div class="scroll"><table><thead><tr><th>学生</th><th>类型</th><th>分</th><th></th></tr></thead>
+          <tbody id="violations"></tbody></table></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:18px">
+        <h3>审计日志 <span class="tag">最近 20 条</span></h3>
+        <div class="scroll"><table><thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>详情</th></tr></thead>
+        <tbody id="audit"></tbody></table></div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <h3>已发布通知 <span class="tag">学生端可见</span></h3>
+        <div class="scroll"><table><thead><tr><th>通知</th><th>状态</th><th></th></tr></thead>
+        <tbody id="announce-list"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>MIT License · seatlab 1.4.0 · control plane</span>
+    <span>GET /api/v1/admin/dashboard · 每 5 秒轮询</span>
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let KEY = localStorage.getItem("seatlab_admin_key") || "";
+let AUTH = {csrf:"", name:"", role:""};
+let venue = null, policies = null, zones = [];
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600); }
+
+function setIdentity(name, role){
+  AUTH.name = name || ""; AUTH.role = role || "";
+  $("me-tag").textContent = AUTH.name ? (AUTH.name + (role === "admin" ? " · 馆员" : "")) : "";
+  $("me-tag").style.display = AUTH.name ? "inline-block" : "none";
+  $("logout").style.display = AUTH.name || KEY ? "inline" : "none";
+}
+
+async function api(path, opts={}){
+  const headers = {"Content-Type":"application/json"};
+  if(KEY) headers["X-Admin-Key"] = KEY;
+  if(AUTH.csrf) headers["X-CSRF-Token"] = AUTH.csrf;
+  const res = await fetch(path, {...opts, credentials:"same-origin", headers:{...headers, ...(opts.headers||{})}});
+  const data = await res.json().catch(()=>({detail:res.statusText}));
+  if(!res.ok){ const err=new Error(data.detail || String(res.status)); err.status=res.status; throw err; }
+  return data;
+}
+async function getJson(path){ const r=await fetch(path,{credentials:"same-origin"}); return r.json(); }
+function showGate(){ $("gate").style.display = "flex"; }
+const post = (p, body) => api(p,{method:"POST",body:JSON.stringify(body||{})});
+const patch = (p, body) => api(p,{method:"PATCH",body:JSON.stringify(body)});
+
+function fmtMin(m){ return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); }
+function fmtWhen(iso){ return iso ? String(iso).slice(5,16).replace("T"," ") : "—"; }
+
+function renderKpis(d){
+  const live=d.live, t=d.today, p=d.preview;
+  const cls=(v,warn)=>v>=warn?"warn":v>=warn*0.6?"mid":"ok";
+  $("kpis").innerHTML = [
+    [`${(live.occupancy_rate*100).toFixed(1)}%`,`入座率 · ${live.total} 座`, cls(live.occupancy_rate,0.9)],
+    [`${t.reservations}`,`今日预约`, "ok"],
+    [`${(t.checkin_rate*100).toFixed(0)}%`,`签到率`, cls(t.checkin_rate,0.7)=== "warn" ? "warn":"ok"],
+    [`${t.violations}`,`今日违规`, t.violations?"warn":"ok"],
+    [`${t.open_complaints}`,`待处理举报`, t.open_complaints?"mid":"ok"],
+    [`${p.delta_pct>=0?"+":""}${p.delta_pct}%`,`机制 vs 现状`, p.delta_pct>=0?"ok":"warn"],
+  ].map(([v,l,c])=>`<div class="kpi"><b class="${c}">${v}</b><span>${l}</span></div>`).join("");
+  $("live-tag").textContent = live.open ? "开馆中" : "已闭馆";
+  $("live-tag").className = "tag " + (live.open?"":"red");
+}
+
+async function loadSeats(){
+  const d = await api("/api/v1/admin/seats");
+  const counts={free:0,reserved:0,occupied:0,away:0};
+  $("seats").innerHTML = d.seats.map(s=>{counts[s.status]++;
+    return `<div class="seat ${esc(s.status)}" title="${esc(s.label)} · ${esc(s.status)}"></div>`;}).join("");
+  $("seat-count").textContent = `${counts.free} 空闲 / ${counts.reserved} 预约 / ${counts.occupied} 在座 / ${counts.away} 暂离`;
+}
+
+async function loadLists(){
+  const [c,v,an,a] = await Promise.all([
+    api("/api/v1/admin/complaints?status=open"),
+    api("/api/v1/admin/violations?limit=20"),
+    api("/api/v1/admin/announcements"),
+    api("/api/v1/admin/audit?limit=20"),
+  ]);
+  $("c-count").textContent = c.complaints.length;
+  $("complaints").innerHTML = c.complaints.slice(0,10).map(x=>
+    `<tr><td>${x.id}</td><td>${x.seat_id}</td><td>${esc(String(x.note).slice(0,140))}</td>
+     <td><button class="ghost" onclick="resolveComplaint(${x.id})">处理</button></td></tr>`).join("")
+    || `<tr><td colspan="4" style="color:var(--muted)">暂无举报</td></tr>`;
+  $("v-count").textContent = v.violations.length;
+  $("violations").innerHTML = v.violations.slice(0,10).map(x=>
+    `<tr><td>${esc(x.student_id)}</td><td>${esc(x.kind)}</td><td>${x.points}</td>
+     <td>${x.waived?'<span class="tag muted">已豁免</span>':`<button class="ghost" onclick="waive(${x.id})">豁免</button>`}</td></tr>`).join("")
+    || `<tr><td colspan="4" style="color:var(--muted)">暂无记录</td></tr>`;
+  $("announce-list").innerHTML = an.announcements.slice(0,10).map(x=>
+    `<tr><td><b>${esc(x.title)}</b><br><span style="color:var(--muted);font-size:11px">${esc(String(x.body).slice(0,32))}</span></td>
+     <td>${x.active?'<span class="tag ok">生效</span>':'<span class="tag muted">已下线</span>'}<br><span style="color:var(--muted);font-size:10.5px">${fmtWhen(x.created_at)}</span></td>
+     <td>${x.active?`<button class="ghost" onclick="deactivateAnnouncement(${x.id})">下线</button>`:''}</td></tr>`).join("")
+    || `<tr><td colspan="3" style="color:var(--muted)">暂无通知</td></tr>`;
+  const audit = a.audit.map(x=>{
+    const detail = JSON.stringify(x.detail || {});
+    return `<tr><td>${esc(String(x.at).slice(11,19))}</td><td>${esc(x.actor)}</td><td>${esc(x.action)}</td>
+      <td style="color:var(--muted)">${esc(detail.length>80?detail.slice(0,80)+"…":detail)}</td></tr>`;
+  }).join("");
+  $("audit").innerHTML = audit || `<tr><td colspan="4" style="color:var(--muted)">暂无日志</td></tr>`;
+}
+
+async function loadReservations(){
+  const r = await api("/api/v1/admin/reservations?active=true&limit=200");
+  $("r-count").textContent = r.reservations.length;
+  const statusText = {reserved:"待签到", checked_in:"在座", away:"暂离"};
+  $("reservations").innerHTML = r.reservations.slice(0,20).map(x=>
+    `<tr><td>#${x.id}</td><td>${esc(x.seat_label || x.seat_id)}</td><td>${esc(x.student_id)}</td>
+     <td>${statusText[x.status] || esc(x.status)}</td><td>${fmtWhen(x.status==="away"?x.away_until:x.expires_at)}</td>
+     <td><button class="ghost" onclick="forceRelease(${x.id})">释放</button></td></tr>`).join("")
+    || `<tr><td colspan="6" style="color:var(--muted)">当前没有进行中的预约</td></tr>`;
+  $("close-venue").disabled = r.reservations.length === 0;
+}
+
+async function refresh(){
+  const d = await api("/api/v1/admin/dashboard");
+  renderKpis(d);
+  await Promise.all([loadSeats(), loadLists(), loadReservations()]);
+}
+
+function renderZones(){
+  $("zones-editor").innerHTML = zones.map((z,i)=>`
+    <div class="zone-row">
+      <input class="z-key" data-i="${i}" value="${esc(z.key)}" maxlength="8" aria-label="区域代码">
+      <input class="z-name" data-i="${i}" value="${esc(z.name)}" maxlength="40" aria-label="区域名称">
+      <input class="z-share" data-i="${i}" type="number" step="0.01" min="0.01" max="1" value="${esc(z.share)}" aria-label="区域份额">
+      <button type="button" onclick="removeZone(${i})" aria-label="删除区域">×</button>
+    </div>`).join("");
+  $("zones-editor").querySelectorAll(".z-key").forEach(el=>el.oninput=()=>zones[+el.dataset.i].key=el.value);
+  $("zones-editor").querySelectorAll(".z-name").forEach(el=>el.oninput=()=>zones[+el.dataset.i].name=el.value);
+  $("zones-editor").querySelectorAll(".z-share").forEach(el=>el.oninput=()=>zones[+el.dataset.i].share=+el.value);
+}
+function removeZone(i){ zones.splice(i,1); renderZones(); }
+function addZone(){ zones.push({key:"D", name:"新区域", share:0.1}); renderZones(); }
+
+function fillVenue(){
+  $("venue-name").textContent = venue.name;
+  $("f-name").value = venue.name;
+  $("f-cap").value = venue.cap;
+  $("f-open").value = venue.open_minute;
+  $("f-close").value = venue.close_minute;
+  $("f-grace").value = venue.reservation_grace_min;
+  $("f-away").value = venue.away_limit_min;
+  $("f-credit").value = venue.credit_threshold;
+  $("f-block").value = venue.credit_block_days;
+  $("f-maxmin").value = venue.max_reservation_minutes;
+  $("f-maxactive").value = venue.max_active_reservations;
+  $("f-window").value = venue.credit_window_days;
+  zones = (venue.zones || []).map(z=>({key:z.key, name:z.name, share:z.share}));
+  renderZones();
+  const active = policies.active;
+  $("f-policy").value = active.key;
+  $("f-release").value = active.overrides.release ?? "";
+  $("f-trigger").value = active.overrides.trigger ?? "";
+}
+
+async function loadAll(){
+  venue = await api("/api/v1/admin/venue");
+  policies = await api("/api/v1/admin/policies");
+  $("f-policy").innerHTML = Object.entries(policies.presets)
+    .map(([k,v])=>`<option value="${esc(k)}">${esc(k)} · ${esc(v.name)}</option>`).join("");
+  fillVenue(); await refresh();
+}
+
+async function saveVenue(){
+  const body = {
+    name: $("f-name").value, cap: +$("f-cap").value,
+    open_minute: +$("f-open").value, close_minute: +$("f-close").value,
+    reservation_grace_min: +$("f-grace").value, away_limit_min: +$("f-away").value,
+    credit_threshold: +$("f-credit").value, credit_block_days: +$("f-block").value,
+    max_reservation_minutes: +$("f-maxmin").value, max_active_reservations: +$("f-maxactive").value,
+    credit_window_days: +$("f-window").value,
+    zones: zones.map(z=>({key:z.key.trim(), name:z.name.trim(), share:+z.share})),
+  };
+  try{
+    venue = await patch("/api/v1/admin/venue", body);
+    const overrides={}; if($("f-release").value) overrides.release=+$("f-release").value;
+    if($("f-trigger").value) overrides.trigger=+$("f-trigger").value;
+    await post("/api/v1/admin/policies/activate", {key:$("f-policy").value, overrides});
+    toast("已保存场馆与机制"); await loadAll();
+  }catch(e){ toast("失败："+e.message); }
+}
+async function runPlan(){
+  const demands = $("f-demands").value.split(",").map(x=>parseFloat(x.trim())).filter(x=>!isNaN(x));
+  try{
+    const d = await post("/api/v1/admin/plan",{demands, days:7});
+    const bestKey = `${d.best.cap}/${d.best.demand}`;
+    $("plan-out").innerHTML = `<table><thead><tr><th>容量</th><th>需求</th><th>服务率</th><th>空占</th><th>福利/天</th></tr></thead><tbody>`
+      + d.rows.map(r=>{ const key = `${r.cap}/${r.demand}`; return `<tr${key===bestKey?' style="background:#F1E9DA"':''}><td>${r.cap}</td><td>${r.demand}</td>
+        <td>${(r.served_rate*100).toFixed(1)}%</td><td>${(r.empty_share*100).toFixed(1)}%</td><td>${r.welfare_day.toFixed(0)}</td></tr>`; }).join("")
+      + `</tbody></table><p style="font-size:12px;color:var(--muted);margin:8px 0 0">最优：${d.best.cap} 座 × 需求 ${d.best.demand} · 福利 ${d.best.welfare_day.toFixed(0)} 元/天</p>`;
+  }catch(e){ toast("失败："+e.message); }
+}
+async function announce(){
+  try{
+    await post("/api/v1/admin/announcements",{title:$("f-title").value,body:$("f-body").value});
+    toast("通知已发布"); $("f-title").value=""; $("f-body").value=""; loadLists();
+  }catch(e){ toast("失败："+e.message); }
+}
+async function resolveComplaint(id){
+  try{ await post(`/api/v1/admin/complaints/${id}/resolve`,{note:"已现场核实"}); toast("已处理举报 #"+id); loadLists(); }
+  catch(e){ toast("失败："+e.message); }
+}
+async function deactivateAnnouncement(id){
+  try{ await post(`/api/v1/admin/announcements/${id}/deactivate`,{}); toast("通知已下线"); loadLists(); }
+  catch(e){ toast("失败："+e.message); }
+}
+async function waive(id){
+  try{ await post(`/api/v1/admin/violations/${id}/waive`,{note:"人工撤销"}); toast("已豁免 #"+id); loadLists(); }
+  catch(e){ toast("失败："+e.message); }
+}
+async function forceRelease(id){
+  if(!confirm(`确定释放预约 #${id}？座位会立即回到空闲。`)) return;
+  try{ await post(`/api/v1/admin/reservations/${id}/release`,{}); toast("预约已释放"); await refresh(); }
+  catch(e){ toast("失败："+e.message); }
+}
+async function closeVenue(){
+  if(!confirm("确定立即清场？所有进行中的预约会立即结束，学生端会看到座位已释放。")) return;
+  try{
+    const r = await post("/api/v1/admin/close?confirm=true",{});
+    toast(`已结束 ${r.closed} 个预约`); await refresh();
+  }catch(e){ toast("失败："+e.message); }
+}
+
+$("connect").onclick = async () => {
+  KEY = $("key").value.trim();
+  if(!KEY && !AUTH.csrf) return toast("请输入 Admin Key，或先完成统一认证");
+  try{
+    await api("/api/v1/admin/dashboard");
+    if(KEY) localStorage.setItem("seatlab_admin_key", KEY);
+    setIdentity(AUTH.name || (KEY ? "应急密钥" : "开放模式"), "admin");
+    $("gate").style.display="none"; await loadAll();
+  }catch(e){ toast("连接失败："+e.message); }
+};
+$("save-venue").onclick = saveVenue;
+$("reload-venue").onclick = loadAll;
+$("run-plan").onclick = runPlan;
+$("announce").onclick = announce;
+$("add-zone").onclick = addZone;
+$("close-venue").onclick = closeVenue;
+$("logout").onclick = async (e)=>{
+  e.preventDefault();
+  try{ await fetch("/auth/logout",{method:"POST",credentials:"same-origin"}); }catch(_){}
+  localStorage.removeItem("seatlab_admin_key"); KEY=""; AUTH.csrf=""; location.reload();
+};
+$("key").addEventListener("keydown", e => { if(e.key==="Enter") $("connect").click(); });
+
+(async function boot(){
+  $("key").value = KEY;
+  let cfg = {sso:false, admin_sso:false, admin_key_required:true};
+  try{ cfg = await getJson("/auth/config"); }catch(_){}
+  if(cfg.admin_sso){
+    $("sso-box").style.display = "block";
+    try{
+      const me = await getJson("/auth/me");
+      if(me.authenticated && me.role === "admin"){
+        AUTH.csrf = me.csrf || ""; setIdentity(me.name || me.student_id, me.role);
+        await api("/api/v1/admin/dashboard");
+        $("gate").style.display="none"; await loadAll(); return;
+      }
+      $("sso-hint").textContent = me.authenticated
+        ? "当前账号没有馆员权限，请联系系统管理员加入 SEATLAB_ADMIN_IDS 或角色组。"
+        : "尚未登录，或会话已过期。";
+    }catch(e){ $("sso-hint").textContent = "认证服务暂不可用：" + e.message; }
+  }
+  if(!KEY && cfg.admin_key_required !== false) return;
+  try{
+    await api("/api/v1/admin/dashboard");
+    setIdentity(KEY ? "应急密钥" : "开放模式", "admin");
+    $("gate").style.display="none"; await loadAll();
+  }catch(e){ /* stay at the gate */ }
+})();
+setInterval(()=>{
+  if(document.visibilityState === "visible" && $("gate").style.display === "none"){
+    refresh().catch(e=>{ if(e.status===401){ AUTH.csrf=""; showGate(); } });
+  }
+}, 5000);
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible" && $("gate").style.display === "none"){
+    refresh().catch(()=>{});
+  }
+});
+</script>
+
+</body>
+</html>

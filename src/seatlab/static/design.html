@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SeatLab · 机制设计器</title>
+<style>
+  :root{
+    --paper:#F7F2E8; --ink:#23211C; --muted:#6F6657; --rule:#DCD3C4;
+    --accent:#B4452C; --green:#1E5A54; --amber:#C08A2E; --soft:#FBF7EF;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Noto Serif SC","Songti SC",Georgia,serif;line-height:1.6}
+  header{border-bottom:1px solid var(--rule);padding:26px 28px 22px}
+  header .wrap{max-width:1180px;margin:0 auto;display:flex;align-items:baseline;
+    justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--accent);
+    text-transform:uppercase}
+  h1{font-size:26px;margin:6px 0 0;font-weight:700}
+  nav a{font-family:var(--mono);font-size:12.5px;color:var(--green);text-decoration:none;
+    margin-left:18px;border-bottom:1px solid rgba(30,90,84,.35)}
+  nav a:hover{color:var(--accent);border-color:var(--accent)}
+  main{max-width:1180px;margin:0 auto;padding:28px;display:grid;
+    grid-template-columns:340px 1fr;gap:28px}
+  .panel{background:var(--soft);border:1px solid var(--rule);padding:20px}
+  .panel h2{font-size:15px;margin:0 0 4px;letter-spacing:.02em}
+  .panel p.hint{font-size:12px;color:var(--muted);margin:0 0 16px}
+  .field{margin:14px 0 0}
+  .field label{display:flex;justify-content:space-between;font-size:12.5px;
+    font-family:var(--mono);color:var(--muted);letter-spacing:.02em}
+  .field label b{color:var(--ink);font-weight:600}
+  input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button{width:100%;margin-top:18px;font-family:var(--mono);font-size:13px;letter-spacing:.04em;
+    background:var(--ink);color:var(--paper);border:0;padding:11px 16px;cursor:pointer}
+  button:hover{background:var(--accent)}
+  button[disabled]{opacity:.5;cursor:progress}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:22px}
+  .kpi{padding:16px 16px 14px;border-right:1px solid var(--rule)}
+  .kpi:last-child{border-right:0}
+  .kpi b{display:block;font-size:24px;line-height:1.2}
+  .kpi span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+  .kpi.good b{color:var(--green)} .kpi.bad b{color:var(--accent)}
+  .chartbox{background:var(--soft);border:1px solid var(--rule);padding:16px 18px 10px}
+  .chartbox h3{font-size:13.5px;margin:0 0 2px}
+  .chartbox p{font-size:11.5px;color:var(--muted);margin:0 0 10px}
+  canvas{width:100%;height:210px;display:block}
+  .legend{display:flex;gap:16px;font-family:var(--mono);font-size:11.5px;
+    color:var(--muted);padding:4px 2px 0}
+  .legend i{display:inline-block;width:18px;height:2px;vertical-align:middle;margin-right:5px}
+  pre{margin-top:18px;background:var(--soft);border:1px solid var(--rule);padding:14px;
+    font-family:var(--mono);font-size:11.5px;line-height:1.65;overflow:auto;max-height:220px}
+  .err{color:var(--accent);font-size:12.5px;margin-top:12px;font-family:var(--mono)}
+  footer{max-width:1180px;margin:8px auto 60px;padding:0 28px;
+    font-family:var(--mono);font-size:11px;color:var(--muted)}
+  @media(max-width:900px){main{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div>
+    <div class="kicker">SeatLab · designer</div>
+    <h1>机制设计器</h1>
+  </div>
+  <nav><a href="/">概览</a><a href="/lab">实验室</a><a href="/docs">API</a></nav>
+</div></header>
+
+<main>
+  <section class="panel">
+    <h2>参数</h2>
+    <p class="hint">每次点击都会真实调用 <code>POST /api/v1/simulate</code>，与 CLI 使用同一个内核。</p>
+
+    <div class="field">
+      <label>座位数 <b id="cap-v">500</b></label>
+      <input id="cap" type="range" min="200" max="800" step="20" value="500">
+    </div>
+    <div class="field">
+      <label>到馆需求（1.0 平时 / 1.4 期末） <b id="demand-v">1.40</b></label>
+      <input id="demand" type="range" min="0.7" max="1.8" step="0.05" value="1.4">
+    </div>
+    <div class="field">
+      <label>离座释放阈值（分钟，0=不释放） <b id="release-v">0</b></label>
+      <input id="release" type="range" min="0" max="60" step="5" value="0">
+    </div>
+    <div class="field">
+      <label>触发水位（%，0=始终计时） <b id="trigger-v">0</b></label>
+      <input id="trigger" type="range" min="0" max="100" step="5" value="0">
+    </div>
+    <div class="field">
+      <label>计时收费（元/小时，0=免费） <b id="price-v">0.0</b></label>
+      <input id="price" type="range" min="0" max="5" step="0.5" value="0">
+    </div>
+    <div class="field">
+      <label>巡场间隔（分钟，0=无巡场） <b id="patrol-v">0</b></label>
+      <input id="patrol" type="range" min="0" max="120" step="15" value="0">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>评估天数 <b id="days-v">10</b></label>
+        <input id="days" type="range" min="2" max="30" step="2" value="10">
+      </div>
+      <div class="field">
+        <label>停留时长（小时） <b id="stay-v">4.9</b></label>
+        <input id="stay" type="range" min="3" max="7" step="0.1" value="4.9">
+      </div>
+    </div>
+    <button id="run">运行这次评估</button>
+    <div class="err" id="err"></div>
+  </section>
+
+  <section>
+    <div class="kpis">
+      <div class="kpi" id="k-served"><b>—</b><span>服务率</span></div>
+      <div class="kpi" id="k-empty"><b>—</b><span>空占时长占比</span></div>
+      <div class="kpi" id="k-wait"><b>—</b><span>排队中位 / P90（分钟）</span></div>
+      <div class="kpi" id="k-welfare"><b>—</b><span>福利（元/天）</span></div>
+    </div>
+
+    <div class="chartbox">
+      <h3>一天里的座位占用曲线</h3>
+      <p>08:00–22:00，每小时平均在场座位比例；细线为现状（先到先得），粗线为你设计的机制。</p>
+      <canvas id="chart" width="1000" height="420"></canvas>
+      <div class="legend">
+        <span><i style="background:#B9AF9E"></i>现状 fcfs</span>
+        <span><i style="background:#1E5A54;height:3px"></i>你的机制</span>
+      </div>
+    </div>
+
+    <pre id="request">// 请求体会显示在这里</pre>
+  </section>
+</main>
+
+<footer>MIT License · seatlab 1.4.0 · 结果由 /api/v1/simulate 实时返回</footer>
+
+<script>
+const el = id => document.getElementById(id);
+const knobs = ["cap","demand","release","trigger","price","patrol","days","stay"];
+
+function read() {
+  return {
+    cap: +el("cap").value,
+    demand: +el("demand").value,
+    release: +el("release").value,
+    trigger: +el("trigger").value / 100,
+    price: +el("price").value,
+    patrol: +el("patrol").value,
+    days: +el("days").value,
+    stay: +el("stay").value,
+  };
+}
+
+function labels(k) {
+  el("cap-v").textContent = k.cap;
+  el("demand-v").textContent = k.demand.toFixed(2);
+  el("release-v").textContent = k.release;
+  el("trigger-v").textContent = (k.trigger * 100).toFixed(0);
+  el("price-v").textContent = k.price.toFixed(1);
+  el("patrol-v").textContent = k.patrol;
+  el("days-v").textContent = k.days;
+  el("stay-v").textContent = k.stay.toFixed(1);
+}
+
+function bodyFor(k) {
+  const policy = {key: "fcfs"};
+  if (k.release > 0) policy.release = k.release;
+  if (k.trigger > 0) policy.trigger = k.trigger;
+  if (k.price > 0) policy.price = k.price;
+  if (k.patrol > 0) { policy.staff_patrol = true; policy.patrol_interval = k.patrol; }
+  return {
+    params: {cap: k.cap, days: k.days, mean_present_h: k.stay},
+    policy,
+    demand_scale: k.demand,
+  };
+}
+
+async function call(body) {
+  const res = await fetch("/api/v1/simulate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === "string" ? json.detail : JSON.stringify(json.detail));
+  return json.metrics;
+}
+
+function fmtPct(x) { return (x * 100).toFixed(1) + "%"; }
+
+function setKpi(id, value, cls) {
+  const node = el(id);
+  node.className = "kpi" + (cls ? " " + cls : "");
+  node.querySelector("b").textContent = value;
+}
+
+const ctx = el("chart").getContext("2d");
+
+function draw(base, mine) {
+  const W = el("chart").width, H = el("chart").height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l: 54, r: 16, t: 14, b: 34};
+  const n = mine.util_profile.length;
+  const yMax = Math.max(0.35, ...base.util_profile, ...mine.util_profile) * 1.08;
+  const x = i => pad.l + (W - pad.l - pad.r) * (i / (n - 1));
+  const y = v => H - pad.b - (H - pad.t - pad.b) * (v / yMax);
+
+  ctx.strokeStyle = "#DCD3C4";
+  ctx.lineWidth = 1;
+  ctx.font = "12px ui-monospace, monospace";
+  ctx.fillStyle = "#6F6657";
+  for (let g = 0; g <= 4; g++) {
+    const value = yMax * g / 4;
+    const py = y(value);
+    ctx.beginPath(); ctx.moveTo(pad.l, py); ctx.lineTo(W - pad.r, py); ctx.stroke();
+    ctx.fillText((value * 100).toFixed(0) + "%", 6, py + 4);
+  }
+  for (let i = 0; i < n; i += 2) {
+    ctx.fillText(String(8 + i).padStart(2, "0"), x(i) - 8, H - 12);
+  }
+
+  const line = (series, color, width) => {
+    ctx.beginPath();
+    series.forEach((v, i) => (i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v))));
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  };
+  line(base.util_profile, "#B9AF9E", 1.6);
+  line(mine.util_profile, "#1E5A54", 3);
+  ctx.fillStyle = "#1E5A54";
+  mine.util_profile.forEach((v, i) => {
+    ctx.beginPath(); ctx.arc(x(i), y(v), 2.6, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+async function run() {
+  const k = read();
+  labels(k);
+  const body = bodyFor(k);
+  el("request").textContent = JSON.stringify(body, null, 2);
+  el("run").disabled = true;
+  el("err").textContent = "";
+  try {
+    const mine = await call(body);
+    const base = await call({...body, policy: {key: "fcfs"}});
+    setKpi("k-served", fmtPct(mine.served_rate), mine.served_rate >= base.served_rate ? "good" : "bad");
+    setKpi("k-empty", fmtPct(mine.empty_share), mine.empty_share <= base.empty_share ? "good" : "bad");
+    setKpi("k-wait", mine.wait_p50.toFixed(1) + " / " + mine.wait_p90.toFixed(1), null);
+    setKpi("k-welfare", Math.round(mine.welfare_day).toLocaleString(), mine.welfare_day >= base.welfare_day ? "good" : "bad");
+    draw(base, mine);
+  } catch (e) {
+    el("err").textContent = "请求失败：" + e.message;
+  } finally {
+    el("run").disabled = false;
+  }
+}
+
+knobs.forEach(id => el(id).addEventListener("input", () => labels(read())));
+el("run").addEventListener("click", run);
+labels(read());
+run();
+</script>
+</body>
+</html>

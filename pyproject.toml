@@ -1,0 +1,103 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "seatlab"
+version = "1.4.0"
+description = "SeatLab: a discrete-event seat-allocation simulator and policy API for academic libraries"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "SeatLab contributors" }]
+keywords = [
+  "simulation",
+  "discrete-event",
+  "queueing-theory",
+  "library",
+  "seat-allocation",
+  "policy-design",
+  "single-sign-on",
+  "postgresql",
+  "operations-research",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Education",
+]
+# Core engine is dependency-free (stdlib only).
+dependencies = []
+
+[project.optional-dependencies]
+api = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "httpx>=0.27",
+]
+postgres = [
+  "psycopg[binary]>=3.2",
+]
+dev = [
+  "pytest>=8",
+  "httpx>=0.27",
+  "ruff>=0.6",
+  "build>=1.2",
+  "pre-commit>=3.7",
+]
+
+[project.scripts]
+seatlab = "seatlab.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/n44897162-eng/seatlab"
+Documentation = "https://github.com/n44897162-eng/seatlab/tree/main/docs"
+Issues = "https://github.com/n44897162-eng/seatlab/issues"
+Changelog = "https://github.com/n44897162-eng/seatlab/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/seatlab"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/seatlab",
+  "tests",
+  "docs",
+  "deploy",
+  "examples/*.json",
+  "examples/*.csv",
+  "examples/*.md",
+  "examples/curl.sh",
+  "examples/python_client.py",
+  "README.md",
+  "LICENSE",
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "CITATION.cff",
+  "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]

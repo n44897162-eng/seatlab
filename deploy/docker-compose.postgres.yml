@@ -1,0 +1,61 @@
+# Multi-instance deployment: PostgreSQL + two SeatLab replicas behind nginx.
+#   cp deploy/seatlab.env.example .env   # fill in secrets and SSO settings
+#   docker compose -f deploy/docker-compose.postgres.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-seatlab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-seatlab}
+    volumes:
+      - seatlab-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-seatlab} -d ${POSTGRES_DB:-seatlab}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: seatlab:1.4.0
+    environment:
+      SEATLAB_DB: postgresql://${POSTGRES_USER:-seatlab}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-seatlab}
+      SEATLAB_API_KEY: ${SEATLAB_API_KEY:-}
+      SEATLAB_ADMIN_KEY: ${SEATLAB_ADMIN_KEY:-}
+      SEATLAB_APP_KEY: ${SEATLAB_APP_KEY:-}
+      SEATLAB_CORS_ORIGINS: ${SEATLAB_CORS_ORIGINS:-*}
+      SEATLAB_AUTH_MODE: ${SEATLAB_AUTH_MODE:-oauth}
+      SEATLAB_PUBLIC_URL: ${SEATLAB_PUBLIC_URL:-}
+      SEATLAB_SESSION_SECRET: ${SEATLAB_SESSION_SECRET:-}
+      SEATLAB_ADMIN_IDS: ${SEATLAB_ADMIN_IDS:-}
+      SEATLAB_ADMIN_ROLES: ${SEATLAB_ADMIN_ROLES:-admin,librarian,staff}
+      SEATLAB_CAS_BASE: ${SEATLAB_CAS_BASE:-}
+      SEATLAB_CAS_SERVICE: ${SEATLAB_CAS_SERVICE:-}
+      SEATLAB_CAS_VALIDATE: ${SEATLAB_CAS_VALIDATE:-}
+      SEATLAB_OAUTH_AUTHORIZE: ${SEATLAB_OAUTH_AUTHORIZE:-}
+      SEATLAB_OAUTH_TOKEN: ${SEATLAB_OAUTH_TOKEN:-}
+      SEATLAB_OAUTH_USERINFO: ${SEATLAB_OAUTH_USERINFO:-}
+      SEATLAB_OAUTH_CLIENT_ID: ${SEATLAB_OAUTH_CLIENT_ID:-}
+      SEATLAB_OAUTH_CLIENT_SECRET: ${SEATLAB_OAUTH_CLIENT_SECRET:-}
+      SEATLAB_OAUTH_ID_FIELD: ${SEATLAB_OAUTH_ID_FIELD:-sub}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${SEATLAB_PORT:-8000}:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  seatlab-pg:

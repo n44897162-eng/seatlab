@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>被占掉的座位 · 座位实验室</title>
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+:root{
+  --paper:#F6F2EA; --paper2:#FBF8F2; --ink:#1A1712; --ink2:#3C362D;
+  --muted:#756C5E; --rule:#DCD3C4; --rule2:#C8BCA8;
+  --accent:#B4452C; --accent2:#8E3320;
+  --teal:#1E5A54; --amber:#C08A2E; --free:#E4DCCC;
+  --shadow:0 1px 0 rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-weight:400;line-height:1.75;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 20% 0%,rgba(180,69,44,.05),transparent 40%);}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+h1,h2,h3,h4{font-family:"Noto Serif SC",Georgia,serif;font-weight:700;letter-spacing:-.01em;margin:0}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.smallcaps{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:500}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(180,69,44,.3)}
+a:hover{border-bottom-color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 0 40px;border-bottom:1px solid var(--rule)}
+.kicker{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:26px}
+.kicker .dot{width:7px;height:7px;background:var(--accent);border-radius:50%;transform:translateY(-3px)}
+h1{font-size:clamp(40px,6.6vw,76px);line-height:1.02;letter-spacing:.01em}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{max-width:660px;font-size:17px;color:var(--ink2);margin:22px 0 0}
+.lede strong{font-weight:500;color:var(--ink);border-bottom:2px solid rgba(180,69,44,.35);padding-bottom:1px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);margin-top:44px;border:1px solid var(--rule)}
+.stat{background:var(--paper2);padding:20px 18px 18px}
+.stat .n{font-family:"Noto Serif SC",serif;font-size:clamp(26px,3.4vw,38px);line-height:1;font-weight:700}
+.stat .n span{font-size:.55em;font-weight:400;color:var(--muted);margin-left:3px}
+.stat .l{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5}
+
+/* ---------- section ---------- */
+section{padding:64px 0;border-bottom:1px solid var(--rule)}
+.sec-head{display:flex;gap:22px;align-items:flex-start;margin-bottom:30px}
+.sec-num{font-family:ui-monospace,monospace;font-size:12px;color:var(--accent);letter-spacing:.1em;padding-top:9px;min-width:34px}
+.sec-head h2{font-size:clamp(24px,3vw,34px);line-height:1.2}
+.sec-head p{margin:8px 0 0;color:var(--muted);font-size:14.5px;max-width:760px}
+.grid2{display:grid;grid-template-columns:1.25fr .75fr;gap:38px;align-items:start}
+.grid2.rev{grid-template-columns:.75fr 1.25fr}
+.card{background:var(--paper2);border:1px solid var(--rule);padding:22px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.7}
+.note b{color:var(--ink2);font-weight:500}
+
+/* ---------- lab ---------- */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px}
+.panel{background:var(--paper2);border:1px solid var(--rule);padding:18px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+.clock{font-family:ui-monospace,monospace;font-size:19px;letter-spacing:.04em}
+.pill{font-size:11px;padding:3px 9px;border:1px solid var(--rule2);color:var(--muted);border-radius:999px}
+canvas.seatcv{display:block;margin:0 auto}
+grid3,.grid3{display:grid}
+.grid3{grid-template-columns:repeat(3,1fr);gap:18px}
+.kv{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-top:1px solid var(--rule);font-size:12.5px}
+.kv span{color:var(--muted)}
+.kv b{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;font-weight:600}
+@media(max-width:900px){.grid3{grid-template-columns:1fr}}
+.relbar{position:relative;height:8px;min-width:76px}
+.relbar .zero{position:absolute;left:50%;top:-4px;width:1px;height:16px;background:#C9BFAE}
+.relbar .fill{position:absolute;top:0;height:8px;border-radius:1px}
+.relbar .pos{background:#2F6F68}
+.relbar .neg{background:#B4452C}
+.chartbox{max-width:700px}
+.seatwrap{position:relative;background:#F1EBDF;border:1px solid var(--rule);padding:14px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border:1px solid rgba(0,0,0,.15)}
+.transport{display:flex;align-items:center;gap:12px;margin-top:14px}
+button.tbtn{border:1px solid var(--rule2);background:var(--paper2);color:var(--ink);
+  font-family:inherit;font-size:12.5px;padding:7px 13px;cursor:pointer;border-radius:2px}
+button.tbtn:hover{background:#fff}
+button.tbtn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--rule2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--accent);cursor:pointer;border:2px solid var(--paper2)}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--paper2)}
+.ctrl{margin-bottom:16px}
+.ctrl label{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:7px}
+.ctrl label b{font-family:ui-monospace,monospace;font-weight:400;color:var(--accent)}
+.meters{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.meter{background:var(--paper2);padding:13px 12px}
+.meter .v{font-family:"Noto Serif SC",serif;font-size:24px;line-height:1;font-weight:700}
+.meter .k{font-size:11px;color:var(--muted);margin-top:6px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.seg button{font-family:inherit;font-size:12px;padding:8px 6px;border:1px solid var(--rule2);
+  background:transparent;color:var(--ink2);cursor:pointer;border-radius:2px;line-height:1.3}
+.seg button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tip{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:12px;border-left:2px solid var(--rule2);padding-left:10px}
+
+/* ---------- tables ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.08em;color:var(--muted);
+  padding:8px 8px;border-bottom:1px solid var(--rule2);white-space:nowrap}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--rule);vertical-align:middle}
+.tbl td.num{font-family:ui-monospace,monospace;white-space:nowrap}
+.tbl tr.best td{background:rgba(30,90,84,.055)}
+.tbl tr.bad td{background:rgba(180,69,44,.05)}
+.bar{height:5px;background:var(--rule);position:relative;min-width:54px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--teal)}
+.bar.acc i{background:var(--accent)}
+.chip{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:2px;border:1px solid var(--rule2);color:var(--muted)}
+.chip.good{color:var(--teal);border-color:rgba(30,90,84,.4);background:rgba(30,90,84,.06)}
+.chip.bad{color:var(--accent);border-color:rgba(180,69,44,.4);background:rgba(180,69,44,.06)}
+
+.caption{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.65}
+.callout{border-left:3px solid var(--accent);padding:2px 0 2px 16px;margin:24px 0;font-size:14.5px;color:var(--ink2)}
+.callout b{color:var(--ink);font-weight:500}
+.big{font-family:"Noto Serif SC",serif;font-size:clamp(30px,4.6vw,48px);line-height:1.05;font-weight:700}
+.big small{font-size:.42em;font-weight:400;color:var(--muted);margin-left:6px}
+footer{padding:44px 0 70px;color:var(--muted);font-size:12px}
+footer .src{column-count:2;column-gap:36px;line-height:1.9}
+@media(max-width:900px){
+  .lab,.grid2,.grid2.rev{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  h1{font-size:44px}
+  .wrap{padding:0 18px}
+  footer .src{column-count:1}
+}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <div class="kicker">
+    <span class="dot"></span><span class="smallcaps">座位实验室 / 2026</span>
+    <span class="smallcaps" style="color:var(--rule2)">仿真 · 机制设计 · 影子定价</span>
+  </div>
+  <h1>被<em>占</em>掉的座位</h1>
+  <p class="lede">高校图书馆里，“桌上一本书就是一个座位”几乎被当作自然现象。我们换一个问法：<strong>如果把座位看成一台容量固定的服务台，占座就是让服务时间凭空变长</strong>。本文用一份可复现的多主体仿真，把这件事算成一笔账——谁被挡在门外、损失多少学习时间、以及有没有一种机制能在不扩建的前提下把座位还回来。</p>
+
+  <div class="stats">
+    <div class="stat"><div class="n mono" id="hero1">—</div><div class="l">期末周，下午到馆者的寻座失败率</div></div>
+    <div class="stat"><div class="n mono" id="hero2">—</div><div class="l">智能释放 ≈ 免费多出的座位数（500 座基准）</div></div>
+    <div class="stat"><div class="n mono" id="hero3">—</div><div class="l">每学年全国被“占着不用”的座位小时</div></div>
+    <div class="stat"><div class="n mono" id="hero4">—</div><div class="l">计时定价的福利增益；代价是挤走 32% 需求</div></div>
+  </div>
+</div></header>
+
+<!-- ================= 01 实验室 ================= -->
+<section id="lab"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">01</div>
+    <div>
+      <h2>把一天压缩成 20 秒</h2>
+      <p>同一批学生、同一天、同一批座位，只换一条规则。下方每个方格是一个座位：<b style="color:var(--teal)">实心</b>是有人在学习，<b style="color:var(--amber)">斜线</b>是“书在人不在”。</p>
+    </div>
+  </div>
+
+  <div class="lab">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="clock" id="clock">08:00</div>
+        <div class="pill" id="policyName">现状：先到先得</div>
+      </div>
+      <div class="seatwrap"><canvas id="seatCanvas" class="seatcv"></canvas></div>
+      <div class="legend">
+        <span><i style="background:#DCD3C4"></i>空闲</span>
+        <span><i style="background:#1E5A54"></i>在场学习</span>
+        <span><i style="background:repeating-linear-gradient(45deg,#C08A2E 0 2px,#F1EBDF 2px 5px)"></i>空占（被物品占着）</span>
+        <span><i style="background:#fff;border:1px dashed #B0A089"></i>预约未到</span>
+        <span><i style="background:#B4452C"></i>刚被系统释放</span>
+      </div>
+      <div class="transport">
+        <button class="tbtn on" id="playBtn">暂停</button>
+        <input type="range" id="scrub" min="0" max="280" value="0" style="flex:1">
+        <button class="tbtn" id="resetBtn">重跑</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:14px">
+        <div class="smallcaps" style="margin-bottom:10px">分配规则</div>
+        <div class="seg" id="policySeg">
+          <button data-k="fcfs" class="on">现状：先到先得</button>
+          <button data-k="t30">离座 30 分释放</button>
+          <button data-k="t15">离座 15 分释放</button>
+          <button data-k="smart">拥挤时才释放</button>
+        </div>
+        <div class="ctrl" style="margin-top:14px">
+          <label>到馆需求 <b id="vDemand">1.40×</b></label>
+          <input type="range" id="sDemand" min="0.9" max="1.7" step="0.05" value="1.4">
+        </div>
+        <div class="ctrl">
+          <label>占座倾向（离座时保留座位的概率） <b id="vHoard">59%</b></label>
+          <input type="range" id="sHoard" min="0" max="1" step="0.02" value="0.59">
+        </div>
+        <div class="ctrl" style="margin-bottom:0">
+          <label>座位数 <b id="vCap">500</b></label>
+          <input type="range" id="sCap" min="400" max="600" step="20" value="500">
+        </div>
+      </div>
+
+      <div class="meters" id="meters">
+        <div class="meter"><div class="v mono" id="mPresent">0</div><div class="k">在场学习</div></div>
+        <div class="meter"><div class="v mono" id="mHeld">0</div><div class="k">空占座位</div></div>
+        <div class="meter"><div class="v mono" id="mQueue">0</div><div class="k">排队等待</div></div>
+        <div class="meter"><div class="v mono" id="mFail">0</div><div class="k">今日寻座失败</div></div>
+        <div class="meter"><div class="v mono" id="mUtil">0%</div><div class="k">座位利用率</div></div>
+        <div class="meter"><div class="v mono" id="mTax">¥0</div><div class="k">累计“占座税”</div></div>
+      </div>
+      <div class="tip">“占座税”＝空占座位小时 × 2.6 元/小时（学生对一小时座位的支付意愿中位数）。它不是罚款，而是被白白消耗掉的时间价值。</div>
+    </div>
+  </div>
+  <div class="caption">仿真与第 03–07 节使用同一套参数与事件规则，此处仅为便于观察的实时版本；因随机数实现不同，单日数值会有小幅差异。拖动“占座倾向”到 0，你会看到失败率迅速下降——这就是占座的外部性。</div>
+</div></section>
+
+<!-- ================= 02 账本 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">02</div>
+    <div>
+      <h2>先看一笔账：座位并没有“不够”，而是被锁住了</h2>
+      <p>以某中型高校图书馆为标定：500 个座位、08:00–22:00、每座位每日约 2.03 人次到馆（复旦 2.03、中南财 1.94）。平时利用率约 62%，期末周升到 87%——总量并不缺，缺的是“可用的那一部分”。</p>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <div id="chartUtil"></div>
+      <div class="caption">每小时座位利用率。平时（虚线）峰值 75%，期末（实线）从 10:00 起贴着 91–94% 的天花板运行——这正是排队与占座同时发作的区间。</div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="smallcaps" style="margin-bottom:14px">期末周 · 现状机制</div>
+        <div id="ledger"></div>
+        <div class="note" style="margin-top:16px;border-top:1px solid var(--rule);padding-top:14px">
+          空占占比 8.7% 是本模型测得的“<b>书在人不在</b>”的座位时间占比。社会调查里常说的“约 35% 座位被物品占据”，统计口径更宽：还包括在场者把书包、水杯摊到邻座。两者不是一回事，前者才是真正把别人挡在门外的部分。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>关键点：</b>占座不是“少了一点座位”，而是把每个座位的<b>有效服务时间</b>拉长。排队论里，等待时间随负荷 ρ 按 1/(1−ρ) 增长；占座直接把 ρ 推高，于是同样的到馆人数，等待会被放大数倍——这正是它最不公平的地方。
+  </div>
+</div></section>
+
+<!-- ================= 03 机制联赛 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">03</div>
+    <div>
+      <h2>六种机制，同一天，同一批人</h2>
+      <p>固定随机种子、逐人配对，只改变分配规则。评价四个维度：<b>能不能坐下</b>（服务率）、<b>被浪费的座位时间</b>（空占率）、<b>人均学习时长</b>、<b>总福利</b>（学习收益 − 排队成本 − 管理成本）。</p>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px" id="scenSeg">
+    <button class="tbtn" data-s="0">平时</button>
+    <button class="tbtn on" data-s="1">期末周</button>
+  </div>
+
+  <div style="overflow-x:auto"><table class="tbl" id="policyTable"></table></div>
+  <div class="caption" id="policyNote"></div>
+  <div class="caption" style="margin-top:10px;color:var(--muted)">
+    口径：空占率＝空占座位时间 ÷（在场＋空占）座位时间，即“被人占住的座位里有百分之几其实没人”；等待为该时段平均寻座时长；
+    计时收费一行的服务率只统计“愿意付费的到馆者”，被价格挤出的 32% 另计。
+  </div>
+  
+  <div class="callout" style="margin-top:28px">
+    <b>三个反直觉的结果。</b>① 强制清座在<b>平时是负收益</b>：没有拥挤时，它只制造换座摩擦（福利 −2.3%）。② <b>全预约反而更差</b>：它把“占座”换成了“爽约”，每天有 396 个座位小时被订了却没人来，福利 −1.4%。③ <b>“拥挤时才释放”</b>同时拿到了最高福利与接近最高的服务率，清座次数只有无条件 30 分钟方案的一半。
+  </div>
+</div></section>
+
+<!-- ================= 04 时段 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">04</div>
+    <div>
+      <h2>占座的租金，由下午来的人支付</h2>
+      <p>把到馆者按到达时段切开，寻座失败率完全不是均匀分布。上午来的人几乎人人有座，他们中的一部分把座位“锁”到了下午。</p>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><div id="chartFail"></div>
+      <div class="caption">柱：该时段到馆者的寻座失败率（左轴）。16:00–18:00 到馆的人，31% 找不到座位；同一时段 8:00–10:00 是 0%。</div>
+    </div>
+    <div>
+      <div class="big" style="color:var(--accent)">31<span style="font-size:.5em">%</span></div>
+      <div class="caption" style="margin-top:4px">期末周 16:00–18:00 到馆者的失败率，是 08:00–10:00（0%）的无穷倍。</div>
+      <div class="note" style="margin-top:20px">
+        这条曲线解释了为什么“早起排队”会成为理性策略：<b>早到者获得的不是座位，而是一份可以转租的期权</b>。而这份期权的价格，由后来者以等待和失败支付。任何只在“总量”上做文章的方案（比如加座位）都会先缓解这条曲线的右端；任何只在“道德”上做文章的方案，则几乎不会改变它。
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= 05 热力图 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">05</div>
+    <div>
+      <h2>放大效应：越挤，占座越贵</h2>
+      <p>横轴是到馆需求（1.0＝平时，1.6＝极端期末），纵轴是占座倾向。颜色是寻座失败率。注意颜色不是均匀加深的——它在右上角突然变陡。</p>
+    </div>
+  </div>
+  <div class="grid2 rev">
+    <div>
+      <div class="panel">
+        <div class="smallcaps" style="margin-bottom:6px">读图</div>
+        <div style="display:flex;gap:26px;margin:6px 0 18px">
+          <div><div class="big" style="font-size:36px;color:var(--accent)">×2.1</div>
+            <div class="caption" style="margin-top:2px">需求 1.6 时<br>失败率被占座推高倍数</div></div>
+          <div><div class="big" style="font-size:36px;color:var(--amber)">13.7%</div>
+            <div class="caption" style="margin-top:2px">极端占座下<br>被空置的座位时间</div></div>
+        </div>
+        <div class="note">
+          同样把占座倾向从 0 拉到 0.95：<br>
+          在需求 1.0 时，失败率只从 0% 升到 1%；<br>
+          在需求 1.6 时，失败率从 12% 升到 26%，<b>翻了一倍以上</b>。<br><br>
+          原因在排队论：等待时间对负荷是凸函数。占座抬高了有效负荷，在临界点附近，一点额外的占用会换来不成比例的等待。
+        </div>
+        <div class="note" style="margin-top:16px;border-top:1px solid var(--rule);padding-top:14px">
+          <b>政策含义：</b>占座治理应当<b>随拥挤程度调节</b>，而不是全年一刀切。这也正是第 03 节“智能释放”胜出的原因。
+        </div>
+      </div>
+    </div>
+    <div><div id="chartHeat"></div>
+      <div class="caption">每格为 16 天平均。纵轴：离座时保留座位的概率；横轴：到馆需求倍数。</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= 06 定价 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">06</div>
+    <div>
+      <h2>如果给座位标价：效率上去了，谁被请出去了？</h2>
+      <p>付费自习室的月卡约 300 元、上座率 75%，说明“为确定的学习空间付费”已被接受。把这套逻辑搬回图书馆：按小时计价，价格由谁承担？</p>
+    </div>
+  </div>
+  <div class="grid2">
+    <div>
+      <div class="chartbox"><div id="chartPrice"></div>
+      <div class="caption">实线：社会总福利（元/日）；竖带为推荐价格区间。1.5 元（16,960）与 2.0 元（16,981）几乎持平，所以推荐的是一个区间而不是一个点。</div></div>
+      <div class="chartbox" style="margin-top:20px"><div id="chartSens"></div>
+      <div class="caption">敏感性：三条线对应“被挤出者仍有 20% / 45% / 70% 的学习价值”。无论哪一种假设，最优价格都落在 1.5–2.0 元之间。</div></div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="smallcaps" style="margin-bottom:12px">最优价格 ≈ 1.5–2.0 元/小时</div>
+        <div class="note">
+          定价同时完成了两件事：把“低支付意愿 + 长占用”的人筛掉，以及为扩容筹钱。福利在 2.0 元附近见顶（+10.3%），再往上就开始伤及总福利。
+        </div>
+        <div class="note" style="margin-top:14px">
+          <b>公平性：</b>学习时长基尼从 0.37 降到 0.27——付费把座位分给了“愿意长时间用”的人，短时蹭座减少，时长分布反而更平均。<br><br>
+          <b>代价：</b>32% 的低支付意愿学生被挤出（模型中按 0.45 倍的“替代学习环境”价值补偿）。若替代环境更差（0.2 倍），最优价格会前移到 1.5 元，增益收窄到 +8.1%。
+        </div>
+        <div class="note" style="margin-top:14px;border-top:1px solid var(--rule);padding-top:12px">
+          这不是“该不该收费”的道德判断，而是一个可计算的三难：<b>效率、可及性、管理成本</b>，三者不可同时最优。
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= 07 容量 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">07</div>
+    <div>
+      <h2>一张座位的影子价格，和一次机制改革的“等价容量”</h2>
+      <p>如果机制真的有用，它应该能被换算成“相当于多建了几个座位”。这是整篇分析里最实用的一把尺子。</p>
+    </div>
+  </div>
+  <div class="grid2 rev">
+    <div>
+      <div class="panel">
+        <div class="smallcaps">换算结果</div>
+        <div id="equivBox" style="margin-top:12px"></div>
+        <div class="note" style="margin-top:14px">
+          在期末工况、500 座处，每增加一个座位日约产生 <b id="shadowTxt">—</b> 元福利。由此把机制带来的福利差折算成“等价座位”。
+        </div>
+      </div>
+    </div>
+    <div><div id="chartCap"></div>
+      <div class="caption">容量—福利曲线（期末）。现状与智能释放两条线的垂直距离，就是机制的价值；水平距离，就是它等价于多少座位。</div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:38px">
+    <div class="chartbox">
+      <div class="smallcaps" style="margin-bottom:12px">参数寻优：释放阈值 T × 触发占用率</div>
+      <div id="optChart"></div>
+      <div class="caption">每个点是一组机制参数（16 天平均）；40 组点构成一条“效率—福利”边界，而不是一条单一曲线。</div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="smallcaps" style="margin-bottom:10px">怎么读这张图</div>
+        <div class="note">
+          40 组参数构成一条“效率—福利”边界。最优点在 <b>T≈20 分钟、占用率&gt;95% 才启动</b>：福利 15,636，清座仅 143 次/日。<br><br>
+          越往右下走，清座越频繁、冲突越多，福利反而下降；越往左上，释放太慢，座位锁死。<br><br>
+          <b>推荐的两组：</b><br>
+          ① 稳健：T=30、触发 90%（福利 +1.3%，清座 165 次）<br>
+          ② 进取：T=15、触发 95%（服务率 90.3%，清座 257 次）
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= 08 全国 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">08</div>
+    <div>
+      <h2>把 500 个座位放大到 4,300 万学生</h2>
+      <p>这是量级估算，不是统计数字：用教育部 2024 年在校生规模、生均阅览座位 0.10–0.14 个、以及本模型测出的空占率外推。</p>
+    </div>
+  </div>
+  <div class="grid2">
+    <div>
+      <div id="nationalBox"></div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="smallcaps" style="margin-bottom:10px">推导链</div>
+        <div class="note" id="nationalNote"></div>
+      </div>
+    </div>
+  </div>
+  <div class="callout">
+    这个数字的意义不在于精确，而在于<b>量级</b>：它说明占座治理的收益主要来自<b>让已有的座位转起来</b>，而不是来自新建。
+  </div>
+</div></section>
+
+<!-- ================= 09 处方 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">09</div>
+    <div>
+      <h2>三张处方，和一张“别做”清单</h2>
+      <p>如果这套模型只有一个用途，那就是把“该不该管占座”的道德争论，换成“在什么条件下、用哪一档参数”的工程问题。</p>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="panel">
+      <div class="smallcaps" style="color:var(--accent)">处方一 · 计时</div>
+      <div style="font-size:17px;font-weight:600;margin:10px 0 8px">只在拥挤时启动计时</div>
+      <div class="note">阈值 T＝20–30 分钟，占用率 &gt;90–95% 才启动。空馆时它<b>完全不触发</b>，因此没有换座摩擦；期末自动接管。</div>
+      <div class="kv"><span>福利</span><b>+1.3%</b></div>
+      <div class="kv"><span>等价容量</span><b>+5.9 座 / 500 座</b></div>
+      <div class="kv"><span>清座</span><b>165 次/日</b></div>
+    </div>
+    <div class="panel">
+      <div class="smallcaps" style="color:var(--amber)">处方二 · 预约</div>
+      <div style="font-size:17px;font-weight:600;margin:10px 0 8px">只做小比例预约区</div>
+      <div class="note">30% 座位做预约＋到馆 15 分钟未认领即释放；其余 70% 保持自由。全覆盖预约会把占座换成爽约。</div>
+      <div class="kv"><span>福利</span><b>+0.6%</b></div>
+      <div class="kv"><span>服务率</span><b>90.5%</b></div>
+      <div class="kv"><span>预约空置</span><b>164 座·时/日</b></div>
+    </div>
+    <div class="panel">
+      <div class="smallcaps" style="color:var(--green)">处方三 · 定价</div>
+      <div style="font-size:17px;font-weight:600;margin:10px 0 8px">期末按小时价，收入定向扩容</div>
+      <div class="note">1.5–2.0 元/小时，收入必须回流为延长开放或增设座位，并配低价时段；否则只是把学生推到校外付费自习室。</div>
+      <div class="kv"><span>福利</span><b>+10.3%</b></div>
+      <div class="kv"><span>基尼</span><b>0.37 → 0.27</b></div>
+      <div class="kv"><span>风险</span><b>挤出 32% 需求</b></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:34px">
+    <div>
+      <div class="smallcaps" style="margin-bottom:10px">别做清单</div>
+      <div class="note" style="font-size:13px;line-height:1.9">
+        <b>✕ 全年一刀切 30 分钟清座。</b>平时它没有收益、只有摩擦：福利 −2.3%，315 人被迫换座。<br>
+        <b>✕ 全覆盖预约。</b>福利比现状还低 1.4%，每天 396 个座位小时被“订了不来”空置。<br>
+        <b>✕ 只发倡议书、只做道德动员。</b>假设倡议能把占座倾向从 0.59 压到 0.4（已经接近“人人自觉”），极端需求下失败率仍有 18%——它买不到“临界点”之后的那部分。<br>
+        <b>✕ 只加座位不改规则。</b>在临界点附近，新增 40 个座位（500→540）只换来 +8% 福利，成本却是机制方案的数十倍。
+      </div>
+    </div>
+    <div>
+      <div class="smallcaps" style="margin-bottom:10px">一页纸的落地顺序</div>
+      <div class="note" style="font-size:13px;line-height:1.9">
+        <b>第 1 步（0 成本）：</b>统计本校的“到馆—离座”曲线，找出失败率最高的两个小时。如果峰值失败率 &lt;10%，什么都不用做。<br>
+        <b>第 2 步（低风险）：</b>在高峰时段试点“离座 30 分钟计时”，用现有扫码/小程序即可，先跑两周看换座投诉量。<br>
+        <b>第 3 步（结构性）：</b>把预约限制在 20–30% 的座位，并强制“到馆认领”，保留大部分自由座位。<br>
+        <b>第 4 步（价格）：</b>仅期末周启用小时价，收入专款用于延长开放或临时自习区，并公布收支。
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= 10 方法 ================= -->
+<section><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-num">10</div>
+    <div>
+      <h2>模型、校验与它算不出来的东西</h2>
+      <p>一个诚实的仿真，应当同时说清楚它凭什么可信，以及它在哪些地方一定会错。</p>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <div class="smallcaps" style="margin-bottom:10px">内核</div>
+      <div class="note" style="font-size:13px">
+        座位＝容量固定的服务台；学生＝带停留时长、离座事件与策略性占座倾向的到达流。时间以分钟为步长，事件驱动：到馆、离座、回座、超时检查、离馆、排队放弃。<br><br>
+        三类离座：午餐/晚餐（40–60 分钟）、短离（6–18 分钟）、去上课（55–115 分钟）。<b>真正把座位锁死的是第三类</b>——它最长、最“理直气壮”，也最难靠道德劝说解决。<br><br>
+        福利＝Σ 个人学习小时×支付意愿 − Σ 排队分钟×等待成本 − 秩序维护成本。所有政策共享同一批学生、同一组随机数，逐人配对比较。
+      </div>
+
+      <div class="smallcaps" style="margin-top:26px;margin-bottom:10px">校验：与 Erlang-C 闭式解对照</div>
+      <table class="tbl" id="valTable"></table>
+      <div class="caption">独立实现的 M/M/c 事件仿真 vs Erlang-C。ρ=0.5 时误差 0.5%；ρ→0.9 时误差增大，属重尾抽样的固有困难，趋势一致。</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="smallcaps" style="margin-bottom:10px">它算不出来的</div>
+        <div class="note">
+          <b>① 学习质量。</b>模型把“一小时座位”当作同质商品，但拥挤、噪音、找座位的焦虑都会降低这一小时的质量。<br><br>
+          <b>② 社会规范。</b>占座有相当一部分是“帮同学占”“给人留着”，属于互惠行为，不是纯粹的自利。模型只把它当作概率。<br><br>
+          <b>③ 执行成本的真实形态。</b>扫码计时、巡查、清座纠纷、物品保管，都有模型里没有的摩擦与合法性争议。<br><br>
+          <b>④ 替代空间。</b>教学楼、宿舍、付费自习室都会分流需求；模型用 0.45 倍价值粗略代替，并做了 0.2/0.45/0.7 的敏感性。<br><br>
+          <b>⑤ 时间价值。</b>2.6 元/小时是支付意愿而非工资率；用它折算全国账本会系统性偏低。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:34px">
+    <div class="smallcaps" style="margin-bottom:10px">关键参数与来源</div>
+    <table class="tbl" id="paramTable"></table>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="smallcaps" style="margin-bottom:12px">资料来源</div>
+  <div class="src" id="sources"></div>
+  <div style="margin-top:26px;border-top:1px solid var(--rule);padding-top:16px">
+    座位实验室 · 仿真内核 seat_sim v3，Python 3.12；全部数值可由 <span class="mono">experiments.py</span> 复现。本页为单文件，无外部数据依赖。
+  </div>
+</div></footer>
+
+<script>
+/* ============ 数据（由 experiments.py 注入） ============ */
+const DATA = {"validation":[{"c":1,"rho":0.5,"sim":60.3,"theory":60.0,"err":0.005},{"c":4,"rho":0.75,"sim":31.28,"theory":30.57,"err":0.023},{"c":8,"rho":0.875,"sim":40.21,"theory":38.12,"err":0.055},{"c":20,"rho":0.9,"sim":18.17,"theory":16.52,"err":0.099}],"scenarios":[{"tag":"平时","demand_scale":1.0,"rows":[{"name":"现状：先到先得","key":"fcfs","util":0.5731,"peak_util":0.7503,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0898,"ghost_waste":0.0,"displaced":0.0,"avg_study_h":3.9341,"gini":0.2793,"present_h":4011.7021,"held_h":395.5721,"booked_h":0.0,"welfare_day":11685.8027,"study_value_day":12125.0033,"wait_cost_day":264.2006,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1020.5,"served":1020.5,"no_go":0.0,"util_profile":[0.15383833333333333,0.413185,0.579275,0.6694975000000001,0.6921999999999999,0.6682808333333333,0.6493316666666666,0.673295,0.7211875,0.7481316666666666,0.7150616666666667,0.5899708333333333,0.3750408333333333,0.3751083333333333,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[296.225,186.1,101.85,164.9,181.225,80.1,10.1]},{"name":"离座30分钟自动释放","key":"t30","util":0.5671,"peak_util":0.7427,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0551,"ghost_waste":0.0,"displaced":229.05,"avg_study_h":3.8931,"gini":0.2827,"present_h":3969.9658,"held_h":231.3046,"booked_h":0.0,"welfare_day":11414.003,"study_value_day":11995.0364,"wait_cost_day":406.0335,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1020.5,"served":1020.5,"no_go":0.0,"util_profile":[0.15383833333333333,0.4131625,0.578875,0.6678675000000001,0.6882900000000001,0.6620941666666667,0.6422541666666667,0.666525,0.7143425,0.7403375000000001,0.7062183333333334,0.5819816666666667,0.3655541666666667,0.3585908333333333,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[296.225,186.1,101.85,164.9,181.225,80.1,10.1]},{"name":"离座15分钟自动释放","key":"t15","util":0.5623,"peak_util":0.7361,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0407,"ghost_waste":0.0,"displaced":384.4,"avg_study_h":3.8597,"gini":0.2861,"present_h":3936.0108,"held_h":166.9846,"booked_h":0.0,"welfare_day":11244.3584,"study_value_day":11888.4821,"wait_cost_day":469.1237,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1020.5,"served":1020.5,"no_go":0.0,"util_profile":[0.15378416666666667,0.412365,0.5767008333333333,0.664225,0.6831666666666667,0.6561375,0.636635,0.6602416666666666,0.7077475,0.7336991666666667,0.6995808333333333,0.5756175,0.3602325,0.35188833333333336,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[296.225,186.1,101.85,164.9,181.225,80.1,10.1]},{"name":"智能释放：占用>90%才计时30分钟","key":"smart","util":0.5731,"peak_util":0.7503,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0897,"ghost_waste":0.0,"displaced":0.45,"avg_study_h":3.9341,"gini":0.2793,"present_h":4011.6792,"held_h":395.1783,"booked_h":0.0,"welfare_day":11685.6819,"study_value_day":12124.9592,"wait_cost_day":264.2773,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1020.5,"served":1020.5,"no_go":0.0,"util_profile":[0.15383833333333333,0.413185,0.579275,0.6694975000000001,0.6921999999999999,0.6682808333333333,0.6493316666666666,0.673295,0.7211875,0.7481316666666666,0.7150508333333334,0.5899358333333333,0.3750408333333333,0.3751083333333333,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[296.225,186.1,101.85,164.9,181.225,80.1,10.1]},{"name":"全预约 + 15分钟到馆","key":"res","util":0.563,"peak_util":0.7381,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0686,"empty_share":0.0894,"ghost_waste":151.8,"displaced":0.0,"avg_study_h":3.9379,"gini":0.28,"present_h":3940.8792,"held_h":386.6463,"booked_h":668.3112,"welfare_day":11424.0413,"study_value_day":11864.6893,"wait_cost_day":265.648,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1001.525,"served":1001.525,"no_go":0.0,"util_profile":[0.14666833333333334,0.4060358333333333,0.5724783333333333,0.6557391666666667,0.6718916666666667,0.6482191666666667,0.6359066666666667,0.6644791666666666,0.7054433333333333,0.7354200000000001,0.7064541666666667,0.58726,0.37487166666666666,0.37089083333333334,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[290.875,179.6,100.15,161.1,179.6,79.975,10.225]},{"name":"30%预约区 + 智能释放","key":"mix","util":0.5705,"peak_util":0.7454,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0903,"ghost_waste":53.975,"displaced":0.05,"avg_study_h":3.9332,"gini":0.2809,"present_h":3993.2975,"held_h":396.1612,"booked_h":238.0042,"welfare_day":11608.3678,"study_value_day":12061.9482,"wait_cost_day":278.5804,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1016.05,"served":1016.05,"no_go":0.0,"util_profile":[0.15468166666666666,0.41603,0.5796516666666667,0.6646666666666666,0.6818008333333333,0.6600183333333334,0.6463741666666667,0.667885,0.7124383333333333,0.7413958333333334,0.7129616666666667,0.5931366666666666,0.3778583333333333,0.37769583333333334,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[297.425,183.8,99.1,162.725,180.775,81.25,10.975]},{"name":"30分钟释放 + 信用分","key":"credit","util":0.5663,"peak_util":0.7418,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0527,"ghost_waste":0.0,"displaced":220.15,"avg_study_h":3.8874,"gini":0.2832,"present_h":3964.2504,"held_h":220.7379,"booked_h":0.0,"welfare_day":11381.4197,"study_value_day":11976.4887,"wait_cost_day":420.069,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1020.5,"served":1020.5,"no_go":0.0,"util_profile":[0.15383833333333333,0.4131625,0.578835,0.6676175,0.6876683333333333,0.6610183333333334,0.6408558333333334,0.6649258333333333,0.7129491666666666,0.7393866666666666,0.7051658333333333,0.5809391666666667,0.3647458333333333,0.3573925,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[296.225,186.1,101.85,164.9,181.225,80.1,10.1]},{"name":"计时收费 2元/小时","key":"price","util":0.3935,"peak_util":0.5182,"served_rate":1.0,"first_fail":0.0,"balked":0.0,"wait":0.0,"empty_share":0.0898,"ghost_waste":0.0,"displaced":0.0,"avg_study_h":3.9448,"gini":0.2795,"present_h":2754.5925,"held_h":271.4608,"booked_h":0.0,"welfare_day":10860.8465,"study_value_day":11261.9017,"wait_cost_day":226.0552,"monitor_day":175.0,"revenue_day":5509.185,"arrivals":698.825,"served":698.825,"no_go":321.675,"util_profile":[0.10384166666666668,0.2807575,0.3964608333333334,0.45947000000000005,0.47577083333333337,0.4623083333333334,0.4472825,0.4625633333333333,0.49414499999999995,0.5134666666666667,0.49182750000000003,0.4048466666666667,0.2585616666666667,0.2578825,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0,0.0,0.0],"arrivals_by_hour":[201.875,128.475,70.4,111.9,124.075,55.0,7.1]}]},{"tag":"期末","demand_scale":1.4,"rows":[{"name":"现状：先到先得","key":"fcfs","util":0.7758,"peak_util":0.9409,"served_rate":0.873,"first_fail":182.475,"balked":201.15,"wait":12.0305,"empty_share":0.0874,"ghost_waste":0.0,"displaced":0.0,"avg_study_h":3.7804,"gini":0.3738,"present_h":5430.3629,"held_h":520.0521,"booked_h":0.0,"welfare_day":15430.1587,"study_value_day":16379.5177,"wait_cost_day":774.359,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1437.1,"served":1254.625,"no_go":0.0,"util_profile":[0.219675,0.5897275,0.8299808333333333,0.9106866666666666,0.9128208333333333,0.9129541666666666,0.91966,0.9318799999999999,0.9345399999999999,0.9352008333333334,0.9194816666666666,0.8013175,0.5189033333333334,0.5238975,0.0],"fail_by_hour":[0.0,0.17132252393045516,0.1394415357766143,0.15189736955584304,0.3129231959760108,0.02183219178082192,0.0],"arrivals_by_hour":[415.85,255.95,143.25,231.9,258.45,116.8,14.9]},{"name":"离座30分钟自动释放","key":"t30","util":0.7913,"peak_util":0.9655,"served_rate":0.899,"first_fail":145.2,"balked":165.9,"wait":14.3149,"empty_share":0.0528,"ghost_waste":0.0,"displaced":314.725,"avg_study_h":3.8555,"gini":0.3578,"present_h":5539.2029,"held_h":308.6833,"booked_h":0.0,"welfare_day":15527.3082,"study_value_day":16713.186,"wait_cost_day":1010.8778,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1437.1,"served":1291.9,"no_go":0.0,"util_profile":[0.219675,0.5897275,0.8324308333333332,0.9345874999999999,0.9454391666666666,0.9400766666666666,0.9426833333333333,0.9573499999999999,0.9614058333333333,0.9626683333333335,0.9415508333333333,0.8133858333333333,0.5197541666666667,0.5176708333333333,0.0],"fail_by_hour":[0.0,0.10929869115061536,0.09947643979057591,0.11869340232858991,0.2847746179144902,0.015839041095890412,0.0],"arrivals_by_hour":[415.85,255.95,143.25,231.9,258.45,116.8,14.9]},{"name":"离座15分钟自动释放","key":"t15","util":0.7948,"peak_util":0.9724,"served_rate":0.9109,"first_fail":128.1,"balked":149.1,"wait":14.8761,"empty_share":0.0387,"ghost_waste":0.0,"displaced":525.45,"avg_study_h":3.8732,"gini":0.3517,"present_h":5563.5183,"held_h":223.7567,"booked_h":0.0,"welfare_day":15509.8729,"study_value_day":16789.4022,"wait_cost_day":1104.5293,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1437.1,"served":1309.0,"no_go":0.0,"util_profile":[0.2196616666666667,0.5891275,0.8311066666666667,0.9395141666666668,0.95434,0.9459325,0.9475508333333333,0.9639958333333333,0.9695533333333334,0.9702691666666666,0.9487466666666666,0.8165458333333333,0.5174683333333333,0.5132241666666666,0.0],"fail_by_hour":[0.0,0.08341472943934362,0.08219895287958115,0.10521776627856835,0.2659121686980074,0.015839041095890412,0.0],"arrivals_by_hour":[415.85,255.95,143.25,231.9,258.45,116.8,14.9]},{"name":"智能释放：占用>90%才计时30分钟","key":"smart","util":0.7919,"peak_util":0.9654,"served_rate":0.8969,"first_fail":148.225,"balked":167.2,"wait":14.0918,"empty_share":0.0655,"ghost_waste":0.0,"displaced":164.75,"avg_study_h":3.8591,"gini":0.3576,"present_h":5543.0296,"held_h":388.0921,"booked_h":0.0,"welfare_day":15628.5785,"study_value_day":16726.1117,"wait_cost_day":922.5332,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1437.1,"served":1288.875,"no_go":0.0,"util_profile":[0.219675,0.5897275,0.8306983333333333,0.9281225,0.944985,0.9391991666666666,0.9419416666666667,0.9572558333333333,0.9614141666666667,0.9623675,0.9418425000000001,0.8139900000000001,0.522875,0.531965,0.0],"fail_by_hour":[0.0,0.1260988474311389,0.09389179755671902,0.11696852091418715,0.2846778874056878,0.015410958904109588,0.0],"arrivals_by_hour":[415.85,255.95,143.25,231.9,258.45,116.8,14.9]},{"name":"全预约 + 15分钟到馆","key":"res","util":0.7672,"peak_util":0.939,"served_rate":0.8892,"first_fail":154.6,"balked":173.775,"wait":15.1579,"empty_share":0.088,"ghost_waste":92.275,"displaced":0.0,"avg_study_h":3.851,"gini":0.3607,"present_h":5370.2321,"held_h":517.925,"booked_h":395.8767,"welfare_day":15209.0942,"study_value_day":16222.1974,"wait_cost_day":838.1032,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1395.15,"served":1240.55,"no_go":0.0,"util_profile":[0.21413333333333334,0.5716866666666667,0.8106091666666666,0.8991541666666667,0.9090091666666666,0.8998016666666666,0.9041641666666667,0.9242091666666667,0.9339924999999999,0.9356791666666666,0.9103791666666666,0.7895441666666667,0.51384,0.5242616666666666,0.0],"fail_by_hour":[0.00030990454939878515,0.14019337016574585,0.13238472622478387,0.14506207359355777,0.263115738886664,0.021919033773205098,0.0],"arrivals_by_hour":[403.35,253.4,138.8,223.525,249.7,111.775,14.6]},{"name":"30%预约区 + 智能释放","key":"mix","util":0.7884,"peak_util":0.964,"served_rate":0.9047,"first_fail":135.375,"balked":154.65,"wait":15.9041,"empty_share":0.0663,"ghost_waste":37.225,"displaced":167.675,"avg_study_h":3.8886,"gini":0.3524,"present_h":5518.545,"held_h":391.84,"booked_h":163.6629,"welfare_day":15522.4986,"study_value_day":16679.1944,"wait_cost_day":981.6957,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1420.075,"served":1284.7,"no_go":0.0,"util_profile":[0.2208675,0.5926716666666667,0.8299433333333333,0.9257158333333333,0.9440633333333333,0.9298333333333334,0.9320433333333333,0.9503791666666667,0.9604258333333334,0.9621908333333333,0.9376766666666667,0.8059675000000001,0.5173216666666667,0.52799,0.0],"fail_by_hour":[0.0,0.12749586052400896,0.07939372067845543,0.11081202332884701,0.2549019607843137,0.014189041693953285,0.0],"arrivals_by_hour":[417.25,256.675,138.55,222.9,256.275,114.525,13.9]},{"name":"30分钟释放 + 信用分","key":"credit","util":0.7917,"peak_util":0.967,"served_rate":0.9013,"first_fail":141.8,"balked":162.675,"wait":14.4908,"empty_share":0.0506,"ghost_waste":0.0,"displaced":302.925,"avg_study_h":3.8579,"gini":0.3567,"present_h":5541.5904,"held_h":295.0333,"booked_h":0.0,"welfare_day":15511.9709,"study_value_day":16720.8106,"wait_cost_day":1033.8396,"monitor_day":175.0,"revenue_day":0.0,"arrivals":1437.1,"served":1295.3,"no_go":0.0,"util_profile":[0.219675,0.5897275,0.8324199999999999,0.9352141666666667,0.9467108333333334,0.9406975,0.9436450000000001,0.9585641666666668,0.9629266666666666,0.9636666666666667,0.9425783333333333,0.8133166666666666,0.51832,0.5157183333333333,0.0],"fail_by_hour":[0.0,0.10656378198866966,0.09563699825479931,0.11394997843898232,0.2810988585799961,0.014982876712328766,0.0],"arrivals_by_hour":[415.85,255.95,143.25,231.9,258.45,116.8,14.9]},{"name":"计时收费 2元/小时","key":"price","util":0.6104,"peak_util":0.8169,"served_rate":0.9988,"first_fail":1.2,"balked":1.3,"wait":0.1523,"empty_share":0.0887,"ghost_waste":0.0,"displaced":0.0,"avg_study_h":4.3546,"gini":0.2749,"present_h":4273.1033,"held_h":415.5821,"booked_h":0.0,"welfare_day":17015.4174,"study_value_day":17539.8759,"wait_cost_day":349.4585,"monitor_day":175.0,"revenue_day":8546.2067,"arrivals":982.125,"served":980.925,"no_go":454.975,"util_profile":[0.152255,0.40303000000000005,0.5692725000000001,0.6707658333333334,0.7092408333333333,0.7053416666666668,0.7051691666666666,0.7333858333333334,0.7852558333333334,0.8157641666666666,0.7839400000000001,0.6527083333333333,0.42051999999999995,0.4395575,0.0],"fail_by_hour":[0.0,0.0,0.0,0.0,0.0065648637077208504,0.0006150061500615006,0.0],"arrivals_by_hour":[284.125,175.5,98.3,157.675,175.175,81.3,10.05]}]}],"calib":{"cap":500,"open_hours":14,"visits_per_seat":2.03,"util_calm":0.5731,"util_exam":0.7758,"peak_calm":0.7503,"peak_exam":0.9409,"empty_calm":0.0898,"empty_exam":0.0874,"session_h":5.65},"heatmap":{"hoard":[0.0,0.2,0.4,0.6,0.8,0.95],"demand":[1.0,1.15,1.3,1.45,1.6],"cells":[{"hoard":0.0,"demand":1.0,"fail":0.0001,"wait":0.17,"empty":0.0,"served":0.9999,"study":4.165,"welfare":12050.9},{"hoard":0.0,"demand":1.15,"fail":0.0023,"wait":0.53,"empty":0.0,"served":0.9977,"study":4.149,"welfare":13443.3},{"hoard":0.0,"demand":1.3,"fail":0.0193,"wait":4.53,"empty":0.0,"served":0.9807,"study":4.054,"welfare":14830.6},{"hoard":0.0,"demand":1.45,"fail":0.0632,"wait":14.41,"empty":0.0,"served":0.9368,"study":3.877,"welfare":15753.7},{"hoard":0.0,"demand":1.6,"fail":0.1205,"wait":19.95,"empty":0.0,"served":0.8795,"study":3.623,"welfare":15871.8},{"hoard":0.2,"demand":1.0,"fail":0.0,"wait":0.0,"empty":0.0331,"served":1.0,"study":4.267,"welfare":12287.8},{"hoard":0.2,"demand":1.15,"fail":0.0008,"wait":0.63,"empty":0.0335,"served":0.9992,"study":4.214,"welfare":14228.1},{"hoard":0.2,"demand":1.3,"fail":0.0303,"wait":7.47,"empty":0.0327,"served":0.9697,"study":4.096,"welfare":14854.8},{"hoard":0.2,"demand":1.45,"fail":0.0914,"wait":13.81,"empty":0.032,"served":0.9086,"study":3.792,"welfare":15539.0},{"hoard":0.2,"demand":1.6,"fail":0.1595,"wait":21.19,"empty":0.0321,"served":0.8405,"study":3.501,"welfare":15697.2},{"hoard":0.4,"demand":1.0,"fail":0.001,"wait":0.31,"empty":0.0614,"served":0.999,"study":4.303,"welfare":12907.4},{"hoard":0.4,"demand":1.15,"fail":0.0089,"wait":1.73,"empty":0.0621,"served":0.9911,"study":4.283,"welfare":14174.4},{"hoard":0.4,"demand":1.3,"fail":0.0504,"wait":7.9,"empty":0.0626,"served":0.9496,"study":4.075,"welfare":15121.2},{"hoard":0.4,"demand":1.45,"fail":0.0985,"wait":13.39,"empty":0.0612,"served":0.9015,"study":3.856,"welfare":15338.7},{"hoard":0.4,"demand":1.6,"fail":0.182,"wait":18.19,"empty":0.0612,"served":0.818,"study":3.451,"welfare":15762.1},{"hoard":0.6,"demand":1.0,"fail":0.002,"wait":0.42,"empty":0.091,"served":0.998,"study":4.362,"welfare":13195.2},{"hoard":0.6,"demand":1.15,"fail":0.0148,"wait":2.66,"empty":0.0922,"served":0.9852,"study":4.293,"welfare":14312.7},{"hoard":0.6,"demand":1.3,"fail":0.0781,"wait":8.45,"empty":0.0896,"served":0.9219,"study":4.026,"welfare":15098.9},{"hoard":0.6,"demand":1.45,"fail":0.1346,"wait":12.44,"empty":0.0888,"served":0.8654,"study":3.744,"welfare":15375.6},{"hoard":0.6,"demand":1.6,"fail":0.1894,"wait":14.79,"empty":0.088,"served":0.8106,"study":3.482,"welfare":15729.2},{"hoard":0.8,"demand":1.0,"fail":0.0021,"wait":0.23,"empty":0.1166,"served":0.9979,"study":4.411,"welfare":13274.3},{"hoard":0.8,"demand":1.15,"fail":0.0285,"wait":2.3,"empty":0.1144,"served":0.9715,"study":4.327,"welfare":14524.0},{"hoard":0.8,"demand":1.3,"fail":0.1062,"wait":6.73,"empty":0.1147,"served":0.8938,"study":3.937,"welfare":15040.2},{"hoard":0.8,"demand":1.45,"fail":0.1725,"wait":8.62,"empty":0.1147,"served":0.8275,"study":3.619,"welfare":15487.9},{"hoard":0.8,"demand":1.6,"fail":0.215,"wait":10.5,"empty":0.1153,"served":0.785,"study":3.443,"welfare":15646.7},{"hoard":0.95,"demand":1.0,"fail":0.0054,"wait":0.14,"empty":0.1365,"served":0.9946,"study":4.459,"welfare":13579.4},{"hoard":0.95,"demand":1.15,"fail":0.0515,"wait":1.84,"empty":0.1332,"served":0.9485,"study":4.265,"welfare":14759.5},{"hoard":0.95,"demand":1.3,"fail":0.1159,"wait":3.82,"empty":0.1351,"served":0.8841,"study":3.934,"welfare":15232.0},{"hoard":0.95,"demand":1.45,"fail":0.196,"wait":5.68,"empty":0.1338,"served":0.804,"study":3.568,"welfare":15568.6},{"hoard":0.95,"demand":1.6,"fail":0.2627,"wait":6.91,"empty":0.1348,"served":0.7373,"study":3.254,"welfare":15701.5}]},"capacity":{"caps":[380,420,460,500,540,580,620],"rows":[{"key":"fcfs","name":"现状：先到先得","cap":380,"welfare":11513.72,"served":0.8807,"wait":14.44,"present":4096.4,"empty":0.0881},{"key":"fcfs","name":"现状：先到先得","cap":420,"welfare":12824.79,"served":0.8725,"wait":13.44,"present":4526.6,"empty":0.088},{"key":"fcfs","name":"现状：先到先得","cap":460,"welfare":14153.09,"served":0.8662,"wait":13.78,"present":4990.5,"empty":0.0882},{"key":"fcfs","name":"现状：先到先得","cap":500,"welfare":15361.63,"served":0.8699,"wait":11.63,"present":5420.9,"empty":0.0871},{"key":"fcfs","name":"现状：先到先得","cap":540,"welfare":16640.62,"served":0.8813,"wait":11.88,"present":5841.7,"empty":0.0888},{"key":"fcfs","name":"现状：先到先得","cap":580,"welfare":17813.0,"served":0.881,"wait":10.5,"present":6275.9,"empty":0.0874},{"key":"fcfs","name":"现状：先到先得","cap":620,"welfare":19258.49,"served":0.8826,"wait":9.91,"present":6758.7,"empty":0.0864},{"key":"t30","name":"离座30分钟自动释放","cap":380,"welfare":11578.74,"served":0.9093,"wait":17.4,"present":4175.9,"empty":0.0529},{"key":"t30","name":"离座30分钟自动释放","cap":420,"welfare":12892.71,"served":0.8999,"wait":15.69,"present":4614.8,"empty":0.053},{"key":"t30","name":"离座30分钟自动释放","cap":460,"welfare":14259.14,"served":0.8927,"wait":15.95,"present":5098.3,"empty":0.0532},{"key":"t30","name":"离座30分钟自动释放","cap":500,"welfare":15440.63,"served":0.8952,"wait":14.14,"present":5528.9,"empty":0.0526},{"key":"t30","name":"离座30分钟自动释放","cap":540,"welfare":16754.6,"served":0.9075,"wait":13.61,"present":5959.1,"empty":0.0538},{"key":"t30","name":"离座30分钟自动释放","cap":580,"welfare":17925.22,"served":0.9069,"wait":12.48,"present":6396.7,"empty":0.0529},{"key":"t30","name":"离座30分钟自动释放","cap":620,"welfare":19365.7,"served":0.9095,"wait":11.49,"present":6890.2,"empty":0.0522},{"key":"t15","name":"离座15分钟自动释放","cap":380,"welfare":11537.99,"served":0.9209,"wait":17.6,"present":4192.7,"empty":0.0384},{"key":"t15","name":"离座15分钟自动释放","cap":420,"welfare":12882.06,"served":0.9122,"wait":15.24,"present":4636.4,"empty":0.0386},{"key":"t15","name":"离座15分钟自动释放","cap":460,"welfare":14250.99,"served":0.9041,"wait":16.84,"present":5123.4,"empty":0.0388},{"key":"t15","name":"离座15分钟自动释放","cap":500,"welfare":15411.92,"served":0.9072,"wait":14.7,"present":5550.6,"empty":0.0385},{"key":"t15","name":"离座15分钟自动释放","cap":540,"welfare":16756.62,"served":0.9182,"wait":14.06,"present":5990.5,"empty":0.039},{"key":"t15","name":"离座15分钟自动释放","cap":580,"welfare":17932.96,"served":0.9171,"wait":11.96,"present":6420.3,"empty":0.0388},{"key":"t15","name":"离座15分钟自动释放","cap":620,"welfare":19339.1,"served":0.9203,"wait":12.2,"present":6922.7,"empty":0.0381},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":380,"welfare":11661.98,"served":0.9071,"wait":16.87,"present":4179.6,"empty":0.0661},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":420,"welfare":12972.72,"served":0.8986,"wait":15.03,"present":4615.8,"empty":0.0672},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":460,"welfare":14354.95,"served":0.89,"wait":15.73,"present":5099.7,"empty":0.0656},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":500,"welfare":15544.87,"served":0.8931,"wait":13.66,"present":5531.1,"empty":0.0651},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":540,"welfare":16812.94,"served":0.9056,"wait":14.37,"present":5966.6,"empty":0.0668},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":580,"welfare":18054.24,"served":0.9054,"wait":11.91,"present":6404.2,"empty":0.0657},{"key":"smart","name":"智能释放：占用>90%才计时30分钟","cap":620,"welfare":19491.18,"served":0.9074,"wait":11.16,"present":6895.2,"empty":0.0652}]},"shadow_price":{"yuan_per_seat_day":31.09,"yuan_per_seat_year":8706.0,"note":"期末工况、C=500 处中心差分；一学年按 280 个开放日"},"equivalent":{"seats":{"t30":2.5,"t15":1.6,"smart":5.9},"marginal_welfare_per_seat":31.094124999999984,"base_welfare":15361.63,"note":"同一轮 500 座位仿真内的福利差，除以容量曲线 460→540 的平均边际福利"},"optimizer":[{"T":10,"trigger":0.75,"served":0.922,"welfare":15354.0,"empty":0.0453,"wait":18.9,"displaced":621.0,"study":3.865},{"T":10,"trigger":0.85,"served":0.9204,"welfare":15401.3,"empty":0.0502,"wait":18.63,"displaced":563.0,"study":3.866},{"T":10,"trigger":0.9,"served":0.9194,"welfare":15402.8,"empty":0.0537,"wait":18.96,"displaced":523.0,"study":3.869},{"T":10,"trigger":0.95,"served":0.9177,"welfare":15426.2,"empty":0.0583,"wait":19.12,"displaced":458.0,"study":3.869},{"T":10,"trigger":1.0,"served":0.886,"welfare":15406.2,"empty":0.0781,"wait":14.91,"displaced":134.0,"study":3.802},{"T":15,"trigger":0.75,"served":0.9065,"welfare":15523.1,"empty":0.0512,"wait":14.54,"displaced":370.0,"study":3.855},{"T":15,"trigger":0.85,"served":0.9052,"welfare":15559.1,"empty":0.0552,"wait":14.47,"displaced":328.0,"study":3.856},{"T":15,"trigger":0.9,"served":0.9048,"welfare":15552.6,"empty":0.0583,"wait":14.66,"displaced":297.0,"study":3.856},{"T":15,"trigger":0.95,"served":0.9026,"welfare":15576.4,"empty":0.0622,"wait":14.12,"displaced":257.0,"study":3.854},{"T":15,"trigger":1.0,"served":0.8803,"welfare":15430.3,"empty":0.0793,"wait":13.79,"displaced":72.0,"study":3.795},{"T":20,"trigger":0.75,"served":0.8977,"welfare":15590.9,"empty":0.0541,"wait":13.87,"displaced":228.0,"study":3.849},{"T":20,"trigger":0.85,"served":0.8967,"welfare":15598.8,"empty":0.0577,"wait":13.63,"displaced":194.0,"study":3.849},{"T":20,"trigger":0.9,"served":0.8964,"welfare":15612.3,"empty":0.0606,"wait":13.68,"displaced":170.0,"study":3.849},{"T":20,"trigger":0.95,"served":0.895,"welfare":15635.9,"empty":0.0643,"wait":13.49,"displaced":143.0,"study":3.847},{"T":20,"trigger":1.0,"served":0.8778,"welfare":15449.4,"empty":0.08,"wait":13.04,"displaced":43.0,"study":3.79},{"T":25,"trigger":0.75,"served":0.8965,"welfare":15551.2,"empty":0.0568,"wait":13.85,"displaced":230.0,"study":3.842},{"T":25,"trigger":0.85,"served":0.8965,"welfare":15563.7,"empty":0.0602,"wait":14.13,"displaced":194.0,"study":3.843},{"T":25,"trigger":0.9,"served":0.8949,"welfare":15553.0,"empty":0.0629,"wait":14.07,"displaced":169.0,"study":3.842},{"T":25,"trigger":0.95,"served":0.8932,"welfare":15556.1,"empty":0.0662,"wait":13.8,"displaced":143.0,"study":3.838},{"T":25,"trigger":1.0,"served":0.8779,"welfare":15426.6,"empty":0.0804,"wait":12.72,"displaced":44.0,"study":3.788},{"T":30,"trigger":0.75,"served":0.8942,"welfare":15512.1,"empty":0.0593,"wait":13.71,"displaced":227.0,"study":3.833},{"T":30,"trigger":0.85,"served":0.8941,"welfare":15538.4,"empty":0.0626,"wait":13.86,"displaced":192.0,"study":3.836},{"T":30,"trigger":0.9,"served":0.8931,"welfare":15544.9,"empty":0.0651,"wait":13.66,"displaced":168.0,"study":3.833},{"T":30,"trigger":0.95,"served":0.8923,"welfare":15543.0,"empty":0.0681,"wait":13.48,"displaced":142.0,"study":3.831},{"T":30,"trigger":1.0,"served":0.8774,"welfare":15416.3,"empty":0.0813,"wait":12.94,"displaced":42.0,"study":3.784},{"T":40,"trigger":0.75,"served":0.8922,"welfare":15433.4,"empty":0.065,"wait":14.48,"displaced":219.0,"study":3.818},{"T":40,"trigger":0.85,"served":0.8911,"welfare":15448.8,"empty":0.0675,"wait":14.43,"displaced":186.0,"study":3.82},{"T":40,"trigger":0.9,"served":0.8902,"welfare":15454.6,"empty":0.0694,"wait":14.35,"displaced":165.0,"study":3.818},{"T":40,"trigger":0.95,"served":0.8891,"welfare":15464.5,"empty":0.0714,"wait":14.16,"displaced":142.0,"study":3.817},{"T":40,"trigger":1.0,"served":0.8763,"welfare":15416.2,"empty":0.0824,"wait":12.73,"displaced":43.0,"study":3.78},{"T":50,"trigger":0.75,"served":0.8885,"welfare":15384.6,"empty":0.0703,"wait":14.21,"displaced":207.0,"study":3.803},{"T":50,"trigger":0.85,"served":0.8875,"welfare":15388.7,"empty":0.0723,"wait":14.44,"displaced":179.0,"study":3.804},{"T":50,"trigger":0.9,"served":0.8873,"welfare":15380.2,"empty":0.0737,"wait":14.49,"displaced":162.0,"study":3.802},{"T":50,"trigger":0.95,"served":0.8859,"welfare":15415.6,"empty":0.0753,"wait":13.66,"displaced":142.0,"study":3.8},{"T":50,"trigger":1.0,"served":0.875,"welfare":15387.2,"empty":0.0834,"wait":12.68,"displaced":43.0,"study":3.774},{"T":60,"trigger":0.75,"served":0.8851,"welfare":15318.2,"empty":0.0755,"wait":14.22,"displaced":178.0,"study":3.788},{"T":60,"trigger":0.85,"served":0.8842,"welfare":15317.7,"empty":0.0769,"wait":14.41,"displaced":157.0,"study":3.788},{"T":60,"trigger":0.9,"served":0.8834,"welfare":15339.6,"empty":0.0778,"wait":14.25,"displaced":144.0,"study":3.787},{"T":60,"trigger":0.95,"served":0.8824,"welfare":15347.1,"empty":0.0788,"wait":13.95,"displaced":127.0,"study":3.785},{"T":60,"trigger":1.0,"served":0.8741,"welfare":15346.3,"empty":0.0846,"wait":12.85,"displaced":40.0,"study":3.769}],"pricing":[{"price":0.0,"served":0.8699,"welfare":15361.6,"gini":0.376,"study":3.757,"revenue":0.0,"wait":11.63,"no_go":0.0,"empty":0.0871},{"price":0.5,"served":0.8702,"welfare":15387.5,"gini":0.376,"study":3.762,"revenue":2710.3,"wait":11.73,"no_go":2.3125,"empty":0.0871},{"price":1.0,"served":0.894,"welfare":15839.3,"gini":0.357,"study":3.874,"revenue":5366.5,"wait":10.73,"no_go":57.5625,"empty":0.0871},{"price":1.5,"served":0.965,"welfare":16960.0,"gini":0.301,"study":4.196,"revenue":7619.7,"wait":4.61,"no_go":232.25,"empty":0.0882},{"price":2.0,"served":0.9986,"welfare":16981.1,"gini":0.272,"study":4.355,"revenue":8548.4,"wait":0.1,"no_go":461.3125,"empty":0.0885},{"price":2.5,"served":1.0,"welfare":16042.1,"gini":0.272,"study":4.364,"revenue":8253.9,"wait":0.0,"no_go":686.5,"empty":0.0888},{"price":3.0,"served":1.0,"welfare":15059.4,"gini":0.272,"study":4.367,"revenue":7419.7,"wait":0.0,"no_go":876.875,"empty":0.0884},{"price":4.0,"served":1.0,"welfare":13355.7,"gini":0.274,"study":4.363,"revenue":5337.5,"wait":0.0,"no_go":1137.5625,"empty":0.0888},{"price":5.0,"served":1.0,"welfare":12136.8,"gini":0.276,"study":4.31,"revenue":3553.6,"wait":0.0,"no_go":1278.625,"empty":0.0894}],"price_sensitivity":[{"alt":0.2,"price":0.0,"welfare":15361.6},{"alt":0.2,"price":1.0,"welfare":15778.8},{"alt":0.2,"price":1.5,"welfare":16607.0},{"alt":0.2,"price":2.0,"welfare":16097.3},{"alt":0.45,"price":0.0,"welfare":15361.6},{"alt":0.45,"price":1.0,"welfare":15839.3},{"alt":0.45,"price":1.5,"welfare":16960.0},{"alt":0.45,"price":2.0,"welfare":16981.1},{"alt":0.7,"price":0.0,"welfare":15361.6},{"alt":0.7,"price":1.0,"welfare":15899.8},{"alt":0.7,"price":1.5,"welfare":17313.0},{"alt":0.7,"price":2.0,"welfare":17864.9}],"national":{"students_wan":4300.8,"universities":3119,"seats_wan":[430.1,602.1],"empty_exam":0.0874,"empty_calm":0.0898,"wasted_hours_yi":[14.98,20.97],"yuan_yi":[38.9,54.5],"peak_days":110,"calm_days":170},"meta":{"generated_by":"seat_sim v3 / experiments.py","seed":20261121,"days_scenario":40,"days_sweep":16}};
+
+/* ============ 小工具 ============ */
+const $ = s => document.querySelector(s);
+const pct = (x,d=1) => (x*100).toFixed(d)+'%';
+const num = (x,d=0) => Number(x).toLocaleString('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d});
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const NS='http://www.w3.org/2000/svg';
+function sv(tag,attrs={},parent){const e=document.createElementNS(NS,tag);
+  for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent)parent.appendChild(e); return e;}
+
+/* ============ 顶部数字 ============ */
+(function hero(){
+  const ex = DATA.scenarios[1].rows;
+  const base = ex[0], smart = ex.find(r=>r.key==='smart'), price = ex.find(r=>r.key==='price');
+  const peakFail = Math.max(...base.fail_by_hour);
+  $('#hero1').textContent = Math.round(peakFail*100)+'%';
+  $('#hero2').textContent = '+'+(DATA.equivalent.seats.smart||0).toFixed(0);
+  const n = DATA.national;
+  $('#hero3').textContent = n.wasted_hours_yi[0].toFixed(0)+'–'+n.wasted_hours_yi[1].toFixed(0)+' 亿';
+  $('#hero4').textContent = '+'+Math.round((price.welfare_day/base.welfare_day-1)*100)+'%';
+})();
+
+/* ============ 02 利用率图 ============ */
+function lineChart(mount, series, opt={}){
+  const w=560,h=256,pad={l:38,r:14,t:38,b:34};
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},mount);
+  const yMax=opt.yMax||1, xN=series[0].y.length;
+  const X=i=>pad.l+(i/(xN-1))*(w-pad.l-pad.r);
+  const Y=v=>h-pad.b-(v/yMax)*(h-pad.t-pad.b);
+  // grid
+  for(let g=0;g<=4;g++){const v=yMax*g/4;
+    sv('line',{x1:pad.l,x2:w-pad.r,y1:Y(v),y2:Y(v),stroke:'#E3DACB','stroke-width':1},svg);
+    sv('text',{x:pad.l-8,y:Y(v)+4,fill:'#8A8172','font-size':10,'text-anchor':'end'},svg).textContent=(v*100).toFixed(0)+'%';
+  }
+  for(let i=0;i<xN;i+=2){
+    sv('text',{x:X(i),y:h-12,fill:'#8A8172','font-size':10,'text-anchor':'middle'},svg).textContent=(8+i)+':00';
+  }
+  series.forEach((s,si)=>{
+    let d='';
+    s.y.forEach((v,i)=>{ d+=(i?'L':'M')+X(i)+' '+Y(v); });
+    sv('path',{d,fill:'none',stroke:s.color,'stroke-width':s.w||2,
+      'stroke-dasharray':s.dash||'','stroke-linejoin':'round'},svg);
+    s.y.forEach((v,i)=>{ if(i%2===0) sv('circle',{cx:X(i),cy:Y(v),r:2.4,fill:s.color},svg); });
+  });
+  // legend
+  series.forEach((s,i)=>{
+    const g=sv('g',{},svg);
+    const yy=14+i*15;
+    sv('line',{x1:pad.l,y1:yy,x2:pad.l+18,y2:yy,
+      stroke:s.color,'stroke-width':2,'stroke-dasharray':s.dash||''},g);
+    sv('text',{x:pad.l+24,y:yy+4,fill:'#4A4338','font-size':10.5},g).textContent=s.name;
+  });
+  return svg;
+}
+(function(){
+  const calm=DATA.scenarios[0].rows[0].util_profile.slice(0,14);
+  const exam=DATA.scenarios[1].rows[0].util_profile.slice(0,14);
+  lineChart($('#chartUtil'),[
+    {name:'平时（需求 1.0）',y:calm,color:'#9A8F7B',dash:'4 3',w:1.6},
+    {name:'期末周（需求 1.4）',y:exam,color:'#B4452C',w:2.2}
+  ],{yMax:1});
+})();
+
+/* ============ 02 账本 ============ */
+(function(){
+  const r=DATA.scenarios[1].rows[0];
+  const rows=[
+    ['到馆人次 / 日', num(r.arrivals)+' 人'],
+    ['实际坐下', num(r.served)+' 人（'+pct(r.served_rate)+'）'],
+    ['空占座位时间', num(r.held_h)+' 座位·时/日'],
+    ['折合“整天锁死”的座位', Math.round(r.held_h/14)+' 个'],
+    ['空占占比（占座池内）', pct(r.empty_share)],
+    ['人均学习时长', r.avg_study_h.toFixed(2)+' 小时'],
+    ['平均寻座等待', r.wait.toFixed(1)+' 分钟'],
+    ['学习时长基尼', r.gini.toFixed(2)],
+  ];
+  $('#ledger').innerHTML=rows.map(([k,v],i)=>
+    `<div style="display:flex;justify-content:space-between;padding:7px 0;${i?'border-top:1px solid var(--rule)':''}">
+      <span style="font-size:12.5px;color:var(--muted)">${k}</span>
+      <span class="mono" style="font-size:13px">${v}</span></div>`).join('');
+})();
+
+/* ============ 03 政策表 ============ */
+let scenIdx=1;
+function renderPolicy(){
+  const rows=DATA.scenarios[scenIdx].rows;
+  const maxW=Math.max(...rows.map(r=>r.welfare_day));
+  const bestKey='smart', worstKey='res';
+  const head=`<tr><th>机制</th><th>服务率</th><th>空占率</th><th>人均学习</th><th>等待</th><th>福利</th><th style="width:90px">相对福利</th><th>判读</th></tr>`;
+  const body=rows.map(r=>{
+    const cls=r.key===bestKey?'best':(r.key===worstKey?'bad':'');
+    const wrel=r.welfare_day/rows[0].welfare_day;
+    const dw=(wrel-1)*100;
+    const w=Math.min(48, Math.sqrt(Math.abs(dw)/10.3)*48);
+    let verdict='';
+    if(r.key==='fcfs') verdict='<span class="chip">基准</span>';
+    else if(r.key==='smart') verdict='<span class="chip good">推荐</span>';
+    else if(r.key==='res') verdict='<span class="chip bad">爽约替代占座</span>';
+    else if(r.key==='price') verdict='<span class="chip bad">挤出 32% 需求</span>';
+    else if(r.key==='t30'||r.key==='t15') verdict='<span class="chip">换座摩擦</span>';
+    else if(r.key==='mix'||r.key==='credit') verdict='<span class="chip">折中</span>';
+    else verdict='<span class="chip">—</span>';
+    return `<tr class="${cls}">
+      <td>${r.name}</td>
+      <td class="num">${pct(r.served_rate)}</td>
+      <td class="num">${pct(r.empty_share)}</td>
+      <td class="num">${r.avg_study_h.toFixed(2)} h</td>
+      <td class="num">${r.wait.toFixed(1)}′</td>
+      <td class="num">${num(r.welfare_day)}</td>
+      <td><div class="relbar"><span class="zero"></span><span class="fill ${dw>=0?'pos':'neg'}"
+           style="left:${dw>=0?50:50-w}%;width:${w}%"></span></div>
+          <span class="mono" style="font-size:10px;color:${dw>=0?'var(--muted)':'var(--accent)'}">${(dw>=0?'+':'')+dw.toFixed(1)}%</span></td>
+      <td>${verdict}</td></tr>`;
+  }).join('');
+  $('#policyTable').innerHTML=head+body;
+  const base=rows[0], sm=rows.find(r=>r.key==='smart'), res=rows.find(r=>r.key==='res');
+  $('#policyNote').innerHTML = scenIdx===1
+    ? `期末周：现状只能让 <b>${pct(base.served_rate)}</b> 的到馆者坐下；智能释放把这一比例提到 ${pct(sm.served_rate)}，并把福利提高 ${((sm.welfare_day/base.welfare_day-1)*100).toFixed(1)}%，清座次数 ${num(sm.displaced)} 次（无条件 30 分钟方案为 ${num(rows.find(r=>r.key==='t30').displaced)} 次）。全预约的 ${num(res.booked_h)} 座位·时/日预约空置，是它落后于现状的直接原因。`
+    : `平时：没有任何一条规则能改善福利——因为不存在拥挤。三十分钟清座让 ${num(rows.find(r=>r.key==='t30').displaced)} 人被迫换座，福利下降 ${((1-rows.find(r=>r.key==='t30').welfare_day/base.welfare_day)*100).toFixed(1)}%。这正是“一刀切治理”的隐性成本。`;
+}
+renderPolicy();
+document.querySelectorAll('#scenSeg button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#scenSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); scenIdx=+b.dataset.s; renderPolicy();
+}));
+
+/* ============ 04 失败率 ============ */
+(function(){
+  const r=DATA.scenarios[1].rows[0];
+  const labels=['8–10','10–12','12–14','14–16','16–18','18–20','20–22'];
+  const w=560,h=300,pad={l:44,r:20,t:26,b:64};
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},$('#chartFail'));
+  const n=labels.length, maxF=0.4;
+  const bw=(w-pad.l-pad.r)/n;
+  const Y=v=>h-pad.b-(v/maxF)*(h-pad.t-pad.b);
+  [0,10,20,30,40].forEach(t=>{
+    sv('line',{x1:pad.l,x2:w-pad.r,y1:Y(t/100),y2:Y(t/100),stroke:'#E3DACB','stroke-width':1},svg);
+    sv('text',{x:pad.l-8,y:Y(t/100)+4,fill:'#8A8172','font-size':10,'text-anchor':'end'},svg).textContent=t+'%';
+  });
+  r.fail_by_hour.forEach((v,i)=>{
+    const bh=Math.max(0,(v/maxF)*(h-pad.t-pad.b));
+    const x=pad.l+i*bw+bw*0.24, wid=bw*0.52;
+    if(bh>0.8) sv('rect',{x,y:h-pad.b-bh,width:wid,height:bh,fill:i===4?'#B4452C':'#D2B2A2'},svg);
+    sv('text',{x:x+wid/2,y:Math.min(h-pad.b-6,h-pad.b-bh-7),fill:i===4?'#B4452C':'#6F6657','font-size':10.5,
+      'text-anchor':'middle','font-weight':i===4?600:400},svg).textContent=(v*100).toFixed(0)+'%';
+    sv('text',{x:pad.l+i*bw+bw/2,y:h-44,fill:'#8A8172','font-size':10,'text-anchor':'middle'},svg).textContent=labels[i];
+    sv('text',{x:pad.l+i*bw+bw/2,y:h-28,fill:'#1E5A54','font-size':9,'text-anchor':'middle'},svg)
+      .textContent='到馆 '+Math.round(r.arrivals_by_hour[i]);
+  });
+  sv('text',{x:pad.l,y:h-14,fill:'#8A8172','font-size':9.5},svg).textContent='青字为该时段平均到馆人数（人/日），与柱子的百分比无关';
+})();
+
+/* ============ 05 热力图 ============ */
+(function(){
+  const H=DATA.heatmap, hs=H.hoard, ds=H.demand;
+  const cw=78, chh=46, pad={l:96,t:56,r:18,b:68};
+  const w=pad.l+ds.length*cw+pad.r, h=pad.t+hs.length*chh+pad.b;
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},$('#chartHeat'));
+  const min=0.0, max=0.28;
+  const col=v=>{ const t=clamp((v-min)/(max-min),0,1);
+    // paper -> amber -> red
+    const c1=[231,221,203], c2=[192,138,46], c3=[180,69,44];
+    const lerp=(a,b,t)=>a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+    const c = t<0.5 ? lerp(c1,c2,t*2) : lerp(c2,c3,(t-0.5)*2);
+    return `rgb(${c.join(',')})`; };
+  ds.forEach((d,j)=>{
+    sv('text',{x:pad.l+j*cw+cw/2,y:pad.t-12,fill:'#8A8172','font-size':10.5,'text-anchor':'middle'},svg)
+      .textContent=(d===1?'1.0':d.toFixed(2));
+  });
+  sv('text',{x:pad.l+ds.length*cw/2,y:18,fill:'#6F6657','font-size':10.5,'text-anchor':'middle'},svg)
+    .textContent='到馆需求倍数 →';
+  hs.forEach((hh,i)=>{
+    sv('text',{x:pad.l-12,y:pad.t+i*chh+chh/2+4,fill:'#8A8172','font-size':10.5,'text-anchor':'end'},svg)
+      .textContent=(hh*100).toFixed(0)+'%';
+    ds.forEach((d,j)=>{
+      const c=H.cells.find(x=>Math.abs(x.hoard-hh)<1e-6&&Math.abs(x.demand-d)<1e-6);
+      const x=pad.l+j*cw, y=pad.t+i*chh;
+      sv('rect',{x:x+2,y:y+2,width:cw-4,height:chh-4,fill:col(c.fail)},svg);
+      sv('text',{x:x+cw/2,y:y+chh/2+4,fill:c.fail>0.12?'#FFF8EC':'#3C362D',
+        'font-size':11.5,'text-anchor':'middle','font-weight':500},svg).textContent=(c.fail*100).toFixed(0)+'%';
+    });
+  });
+  sv('text',{x:14,y:pad.t+hs.length*chh/2,fill:'#6F6657','font-size':10.5,transform:`rotate(-90 14 ${pad.t+hs.length*chh/2})`,'text-anchor':'middle'},svg)
+    .textContent='占座倾向';
+  // scale
+  const sx=pad.l, sy=h-26;
+  for(let i=0;i<=50;i++){const x=sx+i*3.2; sv('rect',{x,y:sy,width:3.2,height:8,fill:col(min+(max-min)*i/50)},svg);}
+  sv('text',{x:sx,y:sy+22,fill:'#8A8172','font-size':10},svg).textContent='0%';
+  sv('text',{x:sx+160,y:sy+22,fill:'#8A8172','font-size':10},svg).textContent='28% 寻座失败率';
+})();
+
+/* ============ 06 定价 ============ */
+(function(){
+  const P=DATA.pricing;
+  const w=560,h=300,pad={l:48,r:24,t:36,b:46};
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},$('#chartPrice'));
+  const xmax=5.2, ymin=11000, ymax=18000;
+  const X=p=>pad.l+(p/xmax)*(w-pad.l-pad.r);
+  const Y=v=>h-pad.b-((v-ymin)/(ymax-ymin))*(h-pad.t-pad.b);
+  sv('text',{x:pad.l,y:14,fill:'#6F6657','font-size':10},svg).textContent='社会总福利（元/日）';
+  sv('rect',{x:X(1.4),y:pad.t,width:X(2.1)-X(1.4),height:h-pad.t-pad.b,fill:'rgba(192,138,46,.13)'},svg);
+  sv('text',{x:(X(1.4)+X(2.1))/2,y:pad.t-8,fill:'#8A7452','font-size':10,'text-anchor':'middle'},svg).textContent='推荐区间';
+  [12000,14000,16000,18000].forEach(v=>{
+    sv('line',{x1:pad.l,x2:w-pad.r,y1:Y(v),y2:Y(v),stroke:'#E3DACB'},svg);
+    sv('text',{x:pad.l-8,y:Y(v)+4,fill:'#8A8172','font-size':9.5,'text-anchor':'end'},svg).textContent=num(v/1000,1)+'k';
+  });
+  [0,1,2,3,4,5].forEach(p=>sv('text',{x:X(p),y:h-22,fill:'#8A8172','font-size':10,'text-anchor':'middle'},svg).textContent=p+' 元');
+  const pts=P.map(r=>[X(r.price),Y(r.welfare)]);
+  sv('path',{d:pts.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(''),fill:'none',stroke:'#B4452C','stroke-width':2.2,'stroke-linejoin':'round'},svg);
+  pts.forEach((p,i)=>{ if(P[i].price%1===0||P[i].price===1.5) sv('circle',{cx:p[0],cy:p[1],r:3,fill:'#B4452C'},svg); });
+  const best=P.reduce((a,b)=>b.welfare>a.welfare?b:a);
+  sv('circle',{cx:X(best.price),cy:Y(best.welfare),r:5.5,fill:'#FFF8EC',stroke:'#B4452C','stroke-width':1.5},svg);
+  sv('text',{x:X(best.price),y:Y(best.welfare)-14,fill:'#B4452C','font-size':10.5,'text-anchor':'middle'},svg)
+    .textContent='最优 2.0 元';
+})();
+
+/* ============ 06 敏感性 ============ */
+(function(){
+  const S=DATA.price_sensitivity;
+  const alts=[0.2,0.45,0.7], cols=['#9A8F7B','#C08A2E','#B4452C'];
+  const w=560,h=210,pad={l:46,r:16,t:18,b:36};
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},$('#chartSens'));
+  const prices=[0,1,1.5,2], ymin=15000, ymax=18000;
+  const X=p=>pad.l+(p/2.06)*(w-pad.l-pad.r), Y=v=>h-pad.b-((v-ymin)/(ymax-ymin))*(h-pad.t-pad.b);
+  for(let g=0;g<=3;g++){const v=ymin+(ymax-ymin)*g/3;
+    sv('line',{x1:pad.l,x2:w-pad.r,y1:Y(v),y2:Y(v),stroke:'#E3DACB'},svg);
+    sv('text',{x:pad.l-6,y:Y(v)+4,fill:'#8A8172','font-size':9.5,'text-anchor':'end'},svg).textContent=num(v/1000,1)+'k';}
+  prices.forEach(p=>sv('text',{x:X(p),y:h-16,fill:'#8A8172','font-size':10,'text-anchor':'middle'},svg).textContent=p+' 元');
+  alts.forEach((a,i)=>{
+    const pts=prices.map(p=>[X(p),Y(S.find(x=>x.alt===a&&x.price===p).welfare)]);
+    sv('path',{d:pts.map((q,j)=>(j?'L':'M')+q[0]+' '+q[1]).join(''),fill:'none',stroke:cols[i],'stroke-width':2,'stroke-linejoin':'round'},svg);
+    pts.forEach(q=>sv('circle',{cx:q[0],cy:q[1],r:2.6,fill:cols[i]},svg));
+    sv('line',{x1:pad.l+4,y1:pad.t+6+i*14,x2:pad.l+20,y2:pad.t+6+i*14,stroke:cols[i],'stroke-width':2},svg);
+    sv('text',{x:pad.l+26,y:pad.t+10+i*14,fill:'#4A4338','font-size':10},svg)
+      .textContent='替代价值 '+(a*100).toFixed(0)+'%';
+  });
+})();
+
+/* ============ 07 容量 ============ */
+(function(){
+  const C=DATA.capacity, caps=C.caps.filter(c=>c>=420&&c<=580);
+  const w=560,h=290,pad={l:52,r:16,t:40,b:44};
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},$('#chartCap'));
+  const ymin=12500, ymax=18500;
+  const X=c=>pad.l+((c-caps[0])/(caps[caps.length-1]-caps[0]))*(w-pad.l-pad.r);
+  const Y=v=>h-pad.b-((v-ymin)/(ymax-ymin))*(h-pad.t-pad.b);
+  [12500,14000,15500,17000,18500].forEach(v=>{
+    sv('line',{x1:pad.l,x2:w-pad.r,y1:Y(v),y2:Y(v),stroke:'#E3DACB'},svg);
+    sv('text',{x:pad.l-8,y:Y(v)+4,fill:'#8A8172','font-size':9.5,'text-anchor':'end'},svg).textContent=num(v/1000,1)+'k';});
+  caps.forEach(c=>{if(c%40===0) sv('text',{x:X(c),y:h-22,fill:'#8A8172','font-size':9.5,'text-anchor':'middle'},svg).textContent=c;});
+  [['fcfs','现状','#9A8F7B'],['smart','智能释放','#B4452C']].forEach(([k,name,col])=>{
+    const rows=C.rows.filter(r=>r.key===k&&r.cap>=420&&r.cap<=580);
+    const pts=rows.map(r=>[X(r.cap),Y(r.welfare)]);
+    sv('path',{d:pts.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(''),fill:'none',stroke:col,'stroke-width':2},svg);
+    pts.forEach(p=>sv('circle',{cx:p[0],cy:p[1],r:2.6,fill:col},svg));
+
+  });
+  // 500 marker + arrow to smart
+  const f500=C.rows.find(r=>r.key==='fcfs'&&r.cap===500), s500=C.rows.find(r=>r.key==='smart'&&r.cap===500);
+  sv('line',{x1:X(500),x2:X(500),y1:Y(f500.welfare),y2:Y(s500.welfare),stroke:'#1E5A54','stroke-width':1.2,'stroke-dasharray':'3 3'},svg);
+  sv('circle',{cx:X(500),cy:Y(f500.welfare),r:4,fill:'#FFF8EC',stroke:'#9A8F7B','stroke-width':1.4},svg);
+  sv('circle',{cx:X(500),cy:Y(s500.welfare),r:4,fill:'#FFF8EC',stroke:'#B4452C','stroke-width':1.4},svg);
+  const ty=Y((f500.welfare+s500.welfare)/2)+4, tw=118;
+  sv('rect',{x:X(500)+6,y:ty-10,width:tw,height:17,fill:'#F7F2E8',opacity:.92},svg);
+  sv('text',{x:X(500)+11,y:ty+2,fill:'#1E5A54','font-size':10},svg)
+    .textContent='机制差 ≈ '+(DATA.equivalent.seats.smart||0).toFixed(0)+' 张座位';
+  sv('text',{x:pad.l,y:12,fill:'#6F6657','font-size':10},svg).textContent='期末 · 福利（元/日）';
+  [['现状','#9A8F7B',pad.l+108],['智能释放','#B4452C',pad.l+158]].forEach(([nm,c,x])=>{
+    sv('line',{x1:x,y1:9,x2:x+16,y2:9,stroke:c,'stroke-width':2},svg);
+    sv('text',{x:x+22,y:13,fill:'#4A4338','font-size':10},svg).textContent=nm;
+  });
+})();
+
+/* ============ 07 等价座位 ============ */
+(function(){
+  const E=DATA.equivalent, sp=DATA.shadow_price;
+  $('#shadowTxt').textContent='¥'+sp.yuan_per_seat_day.toFixed(1);
+  const items=[['t30','离座 30 分释放'],['t15','离座 15 分释放'],['smart','拥挤时才释放']];
+  $('#equivBox').innerHTML=items.map(([k,label])=>{
+    const v=E.seats[k];
+    return `<div style="display:flex;align-items:baseline;gap:10px;padding:9px 0;border-top:1px solid var(--rule)">
+      <span class="mono" style="font-size:22px;color:${k==='smart'?'var(--accent)':'var(--ink)'}">${v>=0?'+':''}${v.toFixed(1)}</span>
+      <span style="font-size:12px;color:var(--muted)">张座位 · ${label}</span></div>`;
+  }).join('')+`<div class="note" style="margin-top:6px">每张座位日 <b>¥${sp.yuan_per_seat_day.toFixed(1)}</b>（约 ¥${num(sp.yuan_per_seat_year)}/年）——这是拥挤状态下座位的机会成本，不是租金。</div>`;
+})();
+
+/* ============ 07 参数寻优 ============ */
+(function(){
+  const G=DATA.optimizer, Ts=[10,15,20,25,30,40,50,60], trs=[0.75,0.85,0.90,0.95,1.00];
+  const w=560,h=300,pad={l:64,r:74,t:24,b:48};
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%'},$('#optChart'));
+  const wmin=Math.min(...G.map(g=>g.welfare)), wmax=Math.max(...G.map(g=>g.welfare));
+  const smin=Math.min(...G.map(g=>g.served)), smax=Math.max(...G.map(g=>g.served));
+  const X=s=>pad.l+(s-smin)/(smax-smin)*(w-pad.l-pad.r);
+  const Y=v=>h-pad.b-(v-wmin)/(wmax-wmin)*(h-pad.t-pad.b);
+  sv('line',{x1:pad.l,x2:w-pad.r,y1:h-pad.b,y2:h-pad.b,stroke:'#C8BCA8'},svg);
+  sv('line',{x1:pad.l,x2:pad.l,y1:pad.t,y2:h-pad.b,stroke:'#C8BCA8'},svg);
+  sv('text',{x:(pad.l+w-pad.r)/2,y:h-18,fill:'#6F6657','font-size':10.5,'text-anchor':'middle'},svg).textContent='寻座服务率 →';
+  sv('text',{x:16,y:(pad.t+h-pad.b)/2,fill:'#6F6657','font-size':10.5,transform:`rotate(-90 16 ${(pad.t+h-pad.b)/2})`,'text-anchor':'middle'},svg).textContent='福利（元/日）';
+  // 10k grid lines
+  sv('text',{x:pad.l-6,y:pad.t+4,fill:'#8A8172','font-size':9.5,'text-anchor':'end'},svg).textContent=num(wmax/1000,1)+'k';
+  sv('text',{x:pad.l-6,y:h-pad.b,fill:'#8A8172','font-size':9.5,'text-anchor':'end'},svg).textContent=num(wmin/1000,1)+'k';
+  sv('text',{x:pad.l,y:h-pad.b+14,fill:'#8A8172','font-size':9.5,'text-anchor':'middle'},svg).textContent=pct(smin);
+  sv('text',{x:w-pad.r,y:h-pad.b+14,fill:'#8A8172','font-size':9.5,'text-anchor':'middle'},svg).textContent=pct(smax);
+  const best=G.reduce((a,b)=>b.welfare>a.welfare?b:a);
+  G.forEach(g=>{
+    const isBest=g.T===best.T&&g.trigger===best.trigger;
+    sv('circle',{cx:X(g.served),cy:Y(g.welfare),r:isBest?6:4,
+      fill:isBest?'#B4452C':'rgba(180,69,44,'+(0.25+0.5*(g.welfare-wmin)/(wmax-wmin))+')',
+      stroke:isBest?'#8E3320':'none','stroke-width':1},svg);
+    if(isBest){ sv('text',{x:X(g.served)+9,y:Y(g.welfare)+4,fill:'#B4452C','font-size':10.5},svg)
+      .textContent='T='+g.T+'′ · 触发 '+Math.round(g.trigger*100)+'%'; }
+  });
+})();
+
+/* ============ 08 全国 ============ */
+(function(){
+  const n=DATA.national;
+  $('#nationalBox').innerHTML=`
+    <div class="big mono" style="color:var(--accent)">${n.wasted_hours_yi[0].toFixed(0)}–${n.wasted_hours_yi[1].toFixed(0)}<small>亿座位·小时 / 学年</small></div>
+    <div class="caption" style="margin-top:8px">按 2.6 元/小时折算，约 <b>${n.yuan_yi[0].toFixed(0)}–${n.yuan_yi[1].toFixed(0)} 亿元</b>的时间价值。相当于平均每个学生每学年被空占 <b>${(n.wasted_hours_yi[0]*1e8/(n.students_wan*1e4)).toFixed(0)}–${(n.wasted_hours_yi[1]*1e8/(n.students_wan*1e4)).toFixed(0)} 小时</b>，约 4–6 个整天。</div>
+    <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin-top:26px">
+      <div class="stat"><div class="n mono" style="font-size:24px">${num(n.students_wan)}<span>万</span></div><div class="l">在校生（本专科+研究生）</div></div>
+      <div class="stat"><div class="n mono" style="font-size:24px">${n.universities}<span>所</span></div><div class="l">高等学校（2024）</div></div>
+      <div class="stat"><div class="n mono" style="font-size:24px">${num(n.seats_wan[0])}–${num(n.seats_wan[1])}<span>万</span></div><div class="l">阅览座位（生均 0.10–0.14）</div></div>
+    </div>`;
+  $('#nationalNote').innerHTML=`
+    ① 在校生 ${num(n.students_wan)} 万人（教育部 2024 公报：本专科 3,891.26 万 + 在学研究生 409.54 万）。<br>
+    ② 生均阅览座位取 0.10–0.14 个（复旦 0.11、中南财 0.09、华东交大 0.17、周口师范 0.24 的区间下沿），得 ${num(n.seats_wan[0])}–${num(n.seats_wan[1])} 万个座位。<br>
+    ③ 学年按 280 个开放日拆成“高峰 110 日”与“平时 170 日”，空占率分别用 ${(n.empty_exam*100).toFixed(1)}% 与 ${(n.empty_calm*100).toFixed(1)}%。<br>
+    ④ 每日 14 小时开放，相乘即得座位·小时。<br>
+    ⑤ 以 2.6 元/小时折算，是“支付意愿”口径，非工资率——因此这是<b>下限</b>。
+  `;
+})();
+
+/* ============ 09 校验与参数 ============ */
+(function(){
+  const V=DATA.validation;
+  $('#valTable').innerHTML='<tr><th>服务台数 c</th><th>负荷 ρ</th><th>仿真等待</th><th>Erlang-C</th><th>相对误差</th></tr>'+
+    V.map(v=>`<tr><td class="num">${v.c}</td><td class="num">${v.rho.toFixed(3)}</td>
+      <td class="num">${v.sim.toFixed(1)}′</td><td class="num">${v.theory.toFixed(1)}′</td>
+      <td class="num">${(v.err*100).toFixed(1)}%</td></tr>`).join('');
+
+  const P=[
+    ['座位数','500','中型高校馆，网格 25×20'],
+    ['开放时长','08:00–22:00（14 h）','周开放 101.5–108 h 的常见值'],
+    ['到馆强度','2.03 人次/座位/日','复旦 2.03、中南财 1.94'],
+    ['在场时长','中位数 4.2 h（期末 4.9 h）','华东交大预约者人均 6.3 h（长尾）'],
+    ['离座','午餐/晚餐 + 短离 + 去上课','约 1.5 次长离、1.2 次短离、0.4 次上课'],
+    ['占座倾向','Beta(2.0,1.4)，均值 0.59','调查：81% 有过占座行为'],
+    ['排队耐心','指数分布，均值 22 min','无人值守时的自然放弃'],
+    ['时间价值','对数正态，中位数 2.6 元/h','付费自习室月卡 300 元 ≈ 1 元/h 的 2.6 倍'],
+    ['秩序成本','0.35 元/座位/日','含扫码系统摊销与巡查'],
+  ];
+  $('#paramTable').innerHTML='<tr><th>参数</th><th>取值</th><th>依据</th></tr>'+
+    P.map(p=>`<tr><td>${p[0]}</td><td class="num" style="font-family:inherit">${p[1]}</td>
+      <td style="color:var(--muted);font-size:12px">${p[2]}</td></tr>`).join('');
+})();
+
+/* ============ 来源 ============ */
+(function(){
+  const S=[
+    ['教育部《2024 年全国教育事业发展统计公报》：高校 3,119 所，本专科在校生 3,891.26 万，在学研究生 409.54 万。','moe.gov.cn'],
+    ['复旦大学图书馆本馆概况：阅览座位 4,246 个，日均接待 8,628 人次。','library.fudan.edu.cn'],
+    ['中南财经政法大学图书馆 2024 年度阅读报告：座位 2,569 个，日均进馆 4,982 人次，周开放 101.5 小时。','library.zuel.edu.cn'],
+    ['华东交通大学 2024 阅读数据报告：自习座位 4,180 个，预约 140,217 人次、885,796 小时。','lib.ecjtu.edu.cn'],
+    ['中国青年报社调查（1,940 名大学生）：81.0% 有过占座行为，62.8% 被占座困扰。','人民网 / 中国青年报'],
+    ['各地“反占座”规则：深圳图书馆 30 分钟、湖南师大 20 分钟缓冲、连云港高校 15 分钟未到场即释放、首都图书馆 60 分钟。','中华网 2025-10'],
+    ['新华网《撑起青春经济新赛道》：共享自习室全国门店超 2.8 万家，2025 年市场规模 50.3 亿元，月卡约 300 元，上座率 75%。','news.cn'],
+    ['《高校图书馆占座现象的博弈分析》（2015）：二人/演化博弈均衡分析，提出“微信计时法”。','北京大学期刊网'],
+    ['《高校图书馆读者使用座位预约管理系统的经济学分析——以吉林大学鼎新图书馆为例》：规则执行的交易成本视角。','图书情报工作'],
+  ];
+  $('#sources').innerHTML=S.map(s=>`<div style="margin-bottom:9px">${s[0]}<br><span class="mono" style="font-size:10.5px;color:#9A8F7B">${s[1]}</span></div>`).join('');
+})();
+</script>
+
+<script>
+/* ============================================================
+   实时座位实验室
+   ============================================================ */
+const LAB=(function(){
+  const HOUR_W=[.16,.13,.10,.08,.05,.05,.07,.09,.10,.08,.05,.03,.01,0];
+  function rngFactory(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;
+    let t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;};}
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  function lognorm(r,med,sig){const u1=Math.max(1e-9,r()),u2=r();
+    const z=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+    return Math.exp(Math.log(med)+sig*z);}
+  function poisson(r,lam){const L=Math.exp(-lam);let k=0,p=1;
+    do{p*=r();k++;}while(p>L&&k<10);return k-1;}
+  function betaish(r){ // 近似 Beta(2.0,1.4) 均值 .59，用两次采样近似
+    return Math.pow(r(),0.62);}
+
+  const OPEN=480, NFRAME=280, STEP=3;
+
+  function build(cfg){
+    const r=rngFactory(cfg.seed||7);
+    const cap=cfg.cap;
+    const n=Math.round(cap*2.03*cfg.demand);
+    const students=[];
+    const arrs=[];
+    // 到达：按小时权重
+    for(let i=0;i<n;i++){
+      let u=r()*HOUR_W.reduce((a,b)=>a+b,0),h=0,acc=0;
+      for(;h<HOUR_W.length;h++){acc+=HOUR_W[h];if(acc>=u)break;}
+      arrs.push(Math.min(839,Math.floor(h*60+r()*60)));
+    }
+    arrs.sort((a,b)=>a-b);
+    arrs.forEach((a,sid)=>{
+      let present=clamp(lognorm(r,252,.55),35,540);
+      const eps=[];
+      const kLong=poisson(r,1.5);
+      const wins=[[680,765],[1030,1120]];
+      for(let i=0;i<kLong&&i<2;i++){
+        const off=rnd(wins[i][0],wins[i][1])-OPEN-a;
+        eps.push([Math.max(0,off),clamp(lognorm(r,45,.5),12,150),false,r()]);
+      }
+      const kShort=poisson(r,1.2);
+      for(let i=0;i<kShort;i++) eps.push([r()*present, rnd(6,18),false,r()]);
+      const kCls=poisson(r,.4);
+      for(let i=0;i<kCls;i++) eps.push([rnd(.1,.8)*present, rnd(55,115),false,r()]);
+      eps.sort((p,q)=>p[0]-q[0]);
+      const keep=eps.filter(e=>e[0]>8&&e[0]<present*.92);
+      students.push({sid,arr:a,present,presentLeft:present,away:keep,ai:0,
+        hoard:betaish(r),state:'new',seat:-1,start:null,last:null,wait:0,
+        uRejoin:keep.map(()=>r()),patience:-Math.log(Math.max(1e-9,r()))*22,
+        seated:false,realized:0,qEnter:null,deadline:null});
+    });
+    return {students,cap,n};
+  }
+
+  function simulate(cfg){
+    const r=rngFactory((cfg.seed||7)+99);
+    const B=build(cfg);
+    const students=B.students, cap=B.cap;
+    let status=new Uint8Array(cap);       // 0 free 1 present 2 held
+    let holder=new Int32Array(cap).fill(-1);
+    let heldSince=new Int32Array(cap);
+    const free=[]; for(let i=cap-1;i>=0;i--) free.push(i);
+    let present=0,held=0,queue=[],ev={},served=0,failed=0,displaced=0,waitSum=0;
+    const frames=[]; let tax=0,taxBase=0;
+    const flash=new Map();
+    let servedEver=0;
+
+    function push(t,kind,sid){t=Math.floor(t);if(t>=0&&t<840){(ev[t]=ev[t]||[]).push([kind,sid]);}}
+    students.forEach(s=>push(s.arr,'arrive',s.sid));
+
+    function release(seat){ if(status[seat]===1)present--; else if(status[seat]===2)held--;
+      status[seat]=0;holder[seat]=-1;free.push(seat); }
+
+    function schedule(s,now){
+      s.state='present'; s.last=now;
+      while(s.ai<s.away.length){
+        const e=s.away[s.ai];
+        if(e[2]){s.ai++;continue;}
+        let t=s.start+e[0]; if(t<=now)t=now+1;
+        if(t-now<s.presentLeft){push(t,'away',s.sid);return;}
+        s.ai++;
+      }
+      push(now+s.presentLeft,'depart',s.sid);
+    }
+    function seatNow(s,seat,now){
+      status[seat]=1;holder[seat]=s.sid;s.seat=seat;present++;
+      if(!s.seated){s.seated=true;served++;servedEver++;}
+      if(s.start===null)s.start=now;
+      else{const sh=now-s.start;if(sh>0){s.start=now;s.away.forEach(e=>e[0]=Math.max(0,e[0]-sh));}}
+      schedule(s,now);
+    }
+    function popFree(){
+      while(free.length){const i=free.pop();if(status[i]===0)return i;} return -1;
+    }
+    function fillQueue(now){
+      while(queue.length){
+        const sid=queue[0]; const s=students[sid];
+        if(s.state!=='waiting'){queue.shift();continue;}
+        const seat=popFree(); if(seat<0)return;
+        queue.shift(); s.wait=now-s.arr; waitSum+=s.wait; seatNow(s,seat,now);
+      }
+    }
+    function snap(now){
+      const f={t:now,seats:status.slice(),present,held,queue:queue.length,
+        served:servedEver,failed:failed,displaced,tax:tax};
+      frames.push(f);
+    }
+
+    for(let now=0;now<840;now++){
+      tax+=held*2.6/60;
+      if(now%STEP===0) snap(now);
+      const tod=now;
+      for(const [kind,sid] of (ev[now]||[])){
+        const s=students[sid];
+        if(kind==='arrive'){
+          if(s.state!=='new')continue;
+          const seat=popFree();
+          if(seat>=0){s.wait=0;seatNow(s,seat,now);}
+          else{s.state='waiting';queue.push(sid);s.qEnter=now;s.deadline=now+s.patience;}
+        } else if(kind==='away'){
+          if(s.state!=='present'||s.ai>=s.away.length)continue;
+          const e=s.away[s.ai];
+          s.presentLeft=Math.max(0,s.presentLeft-(now-(s.last??s.start)));
+          e[2]=true;s.ai++;
+          let h=s.hoard;
+          const seat=s.seat;
+          if(seat>=0&&e[3]<h){
+            status[seat]=2;heldSince[seat]=now;present--;held++;
+            s.state='away_hold';
+            const occ=(present+held)/cap;
+            if(cfg.release!=null && occ>=(cfg.trigger||0)) push(now+cfg.release,'chk',sid);
+          } else {
+            if(seat>=0)release(seat);
+            s.seat=-1;s.state='away_free';
+          }
+          push(now+e[1],'return',sid);
+        } else if(kind==='return'){
+          const seat=s.seat;
+          if(s.state==='away_hold'&&seat>=0&&holder[seat]===sid&&status[seat]===2){
+            status[seat]=1;held--;present++;schedule(s,now);
+          } else {
+            s.seat=-1;
+            const idx=Math.max(0,s.ai-1);
+            if((s.uRejoin[idx]??0.5)<0.9){
+              const seat2=popFree();
+              if(seat2>=0){s.wait=now-s.arr;waitSum+=s.wait;seatNow(s,seat2,now);}
+              else{s.state='waiting';queue.push(sid);s.qEnter=now;s.deadline=now+s.patience;}
+            } else {s.state='left';}
+          }
+        } else if(kind==='chk'){
+          const seat=s.seat;
+          if(s.state==='away_hold'&&seat>=0&&status[seat]===2&&now-heldSince[seat]>=cfg.release){
+            release(seat);s.seat=-1;s.state='away_free';displaced++;flash.set(seat,now);
+          }
+        } else if(kind==='depart'){
+          if(s.state==='present'&&s.seat>=0){
+            s.presentLeft=Math.max(0,s.presentLeft-(now-(s.last??s.start)));
+            release(s.seat);s.seat=-1;
+          }
+          s.state='done';
+        }
+      }
+      fillQueue(now);
+      if(queue.length){
+        let keep=[];
+        for(const sid of queue){
+          const s=students[sid];
+          if(s.state!=='waiting')continue;
+          if(s.deadline!=null && now>s.deadline){
+            s.state='left';failed++;s.wait=now-s.arr;
+          } else keep.push(sid);
+        }
+        queue=keep;
+      }
+    }
+    while(frames.length<NFRAME){frames.push(frames[frames.length-1]);}
+    const total=students.length;
+    const studySum=students.reduce((a,s)=>a+(s.state==='new'?0:s.present-s.presentLeft),0);
+    return {frames,cap,total,served:servedEver,failed,
+      servedRate:servedEver/Math.max(1,total),
+      emptyShare:0, studyH:students.filter(s=>s.state!=='new').reduce((a,s)=>a+s.present/60,0)/Math.max(1,total),
+      displaced,tax,students};
+  }
+
+  return {simulate};
+})();
+</script>
+
+<script>
+/* ============ 控制器 ============ */
+(function(){
+  const cv=$('#seatCanvas'), ctx=cv.getContext('2d');
+  const S={cap:500,demand:1.4,hoard:0.59,policy:'fcfs',frame:0,playing:true,sim:null,scale:2};
+
+  const POL={
+    fcfs:{name:'现状：先到先得',release:null,trigger:0},
+    t30:{name:'离座 30 分释放',release:30,trigger:0},
+    t15:{name:'离座 15 分释放',release:15,trigger:0},
+    smart:{name:'占用>90% 才计时 30 分',release:30,trigger:0.9}
+  };
+
+  function resize(){
+    const box=cv.parentElement.clientWidth-24;
+    const cols=25, rows=Math.ceil(S.cap/cols);
+    const size=Math.max(14, Math.min(Math.floor(box/cols), Math.floor(690/rows), 36));
+    const dpr=Math.min(2, window.devicePixelRatio||1);
+    cv.width=cols*size*dpr; cv.height=rows*size*dpr;
+    cv.style.width=cols*size+'px'; cv.style.height=rows*size+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    S.size=size; S.cols=cols;
+    // 座位号 → 网格位置：打散成随机分布，避免“从第 1 号座开始排排坐”的假象
+    if(!S.perm||S.perm.length!==S.cap){
+      let z=20261121>>>0;
+      const r=()=>{z=(z+0x6D2B79F5)>>>0; let t=z; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296;};
+      const idx=[...Array(S.cap).keys()];
+      for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+      S.perm=idx;
+    }
+  }
+  function draw(){
+    if(!S.sim)return;
+    const f=S.sim.frames[Math.min(S.frame,S.sim.frames.length-1)];
+    const size=S.size, cols=S.cols, gap=2;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for(let i=0;i<S.cap;i++){
+      const x=(i%cols)*size, y=Math.floor(i/cols)*size;
+      const st=f.seats[S.perm[i]];
+      ctx.fillStyle = st===1?'#1E5A54' : st===2?'#F1EBDF' : '#DCD3C4';
+      ctx.fillRect(x+gap/2,y+gap/2,size-gap,size-gap);
+      if(st===2){ // hatch
+        ctx.save();
+        ctx.beginPath();ctx.rect(x+gap/2,y+gap/2,size-gap,size-gap);ctx.clip();
+        ctx.strokeStyle='#C08A2E';ctx.lineWidth=1;
+        for(let k=-size;k<size;k+=4){ctx.beginPath();ctx.moveTo(x+k,y);ctx.lineTo(x+k+size,y+size);ctx.stroke();}
+        ctx.restore();
+      }
+      if(st===1){
+        ctx.fillStyle='rgba(255,248,236,.55)';
+        ctx.fillRect(x+gap/2+size*0.32,y+gap/2+size*0.30,size*0.36,size*0.36);
+      }
+    }
+    // clock
+    const min=f.t, hh=Math.floor((480+min)/60), mm=(480+min)%60;
+    $('#clock').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+    $('#mPresent').textContent=f.present;
+    $('#mHeld').textContent=f.held;
+    $('#mQueue').textContent=f.queue;
+    $('#mFail').textContent=f.failed;
+    $('#mUtil').textContent=pct((f.present+f.held)/S.cap,0);
+    $('#mTax').textContent='¥'+Math.round(f.tax).toLocaleString('zh-CN');
+    $('#scrub').value=S.frame;
+    $('#policyName').textContent=POL[S.policy].name;
+  }
+  function run(){
+    S.sim=LAB.simulate({cap:S.cap,demand:S.demand,hoard:S.hoard,
+      release:POL[S.policy].release,trigger:POL[S.policy].trigger,seed:20261121});
+    S.frame=0; draw();
+  }
+  let lastT=0;
+  function tick(ts){
+    if(S.playing && ts-lastT>72){
+      lastT=ts;
+      S.frame=(S.frame+1)%S.sim.frames.length;
+      draw();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  document.querySelectorAll('#policySeg button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#policySeg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); S.policy=b.dataset.k; run();
+  }));
+  $('#sDemand').addEventListener('input',e=>{S.demand=+e.target.value;
+    $('#vDemand').textContent=S.demand.toFixed(2)+'×'; run();});
+  $('#sHoard').addEventListener('input',e=>{S.hoard=+e.target.value;
+    $('#vHoard').textContent=Math.round(S.hoard*100)+'%'; run();});
+  $('#sCap').addEventListener('input',e=>{S.cap=+e.target.value;
+    $('#vCap').textContent=S.cap; resize(); run();});
+  $('#playBtn').addEventListener('click',e=>{S.playing=!S.playing;
+    e.target.textContent=S.playing?'暂停':'播放'; e.target.classList.toggle('on',S.playing);});
+  $('#resetBtn').addEventListener('click',()=>{S.frame=0;draw();});
+  $('#scrub').addEventListener('input',e=>{S.frame=+e.target.value;draw();});
+
+  window.addEventListener('resize',()=>{resize();draw();});
+  resize(); run(); requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
